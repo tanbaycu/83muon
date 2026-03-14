@@ -385,9 +385,16 @@ const CardViewer = () => {
                                   >
                                     {selectedGirl?.wish || defaultWish}
                                   </ReactMarkdown>
-                               </div>
-                            </div>
-                         </div>
+                                </div>
+                                {selectedGirl?.signature && (
+                                  <div className="w-full text-right mt-6 pr-4">
+                                    <span className="font-serif-editorial italic text-xl sm:text-2xl font-bold text-[var(--color-rust)]/80 inline-block">
+                                       — {selectedGirl.signature}
+                                    </span>
+                                  </div>
+                                )}
+                             </div>
+                          </div>
                       </motion.div>
                     </>
                   )}
@@ -464,6 +471,14 @@ const CardViewer = () => {
                           {selectedGirl?.wish || defaultWish}
                         </ReactMarkdown>
                      </div>
+                     
+                     {selectedGirl?.signature && (
+                        <div className="w-full text-right mt-8">
+                           <span className="font-serif-editorial italic text-2xl lg:text-3xl font-bold text-[var(--color-rust)]/80 inline-block mr-4">
+                              — {selectedGirl.signature}
+                           </span>
+                        </div>
+                     )}
                      
                      <div className="mt-8 pt-6 border-t border-[var(--color-charcoal)]/10 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[var(--color-charcoal)]/50">

@@ -1,10 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
-import { db, storage, auth, provider } from '../lib/firebase';
+import { db, auth, provider } from '../lib/firebase';
 import Cropper from 'react-easy-crop';
-import { Camera, Save, Loader2, CheckCircle2, Eye, DownloadCloud, Bold, Italic, Link, List, Quote, PenTool, RotateCw, FlipHorizontal, LogOut } from 'lucide-react';
+import { Camera, Save, Loader2, CheckCircle2, Eye, Bold, Italic, Link, List, Quote, PenTool, RotateCw, FlipHorizontal, LogOut, LayoutDashboard, Edit3, Lock, ShieldAlert, Search, FilePlus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import imageCompression from 'browser-image-compression';
@@ -63,9 +62,14 @@ const manipulateImage = async (src, type) => {
 };
 
 export default function SystemRemits() {
+  const [viewMode, setViewMode] = useState('editor'); // 'editor' | 'dashboard'
+  const [dashboardData, setDashboardData] = useState([]);
+  const [sttState, setSttState] = useState('unchecked'); // 'unchecked', 'available', 'owned', 'locked'
+
   const [stt, setStt] = useState('');
   const [name, setName] = useState('');
   const [wish, setWish] = useState('');
+  const [signature, setSignature] = useState('');
   const [activeTab, setActiveTab] = useState('write');
   
   const [imageSrc, setImageSrc] = useState(null);
@@ -81,6 +85,28 @@ export default function SystemRemits() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const fileInputRef = useRef(null);
+
+  const loadDashboard = async () => {
+    setIsLoading(true);
+    try {
+      const q = collection(db, 'girls');
+      const snap = await getDocs(q);
+      const list = [];
+      snap.forEach(d => list.push(d.data()));
+      list.sort((a,b) => a.stt && b.stt ? a.stt.localeCompare(b.stt) : 0);
+      setDashboardData(list);
+    } catch(e) {
+      console.error(e);
+      alert('Lỗi tải Dashboard: ' + e.message);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    if (viewMode === 'dashboard') {
+      loadDashboard();
+    }
+  }, [viewMode]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -143,36 +169,82 @@ export default function SystemRemits() {
     }
   };
 
-  const handleLoadExisting = async () => {
+  const handleSttChange = (val) => {
+    setStt(val);
+    if(sttState !== 'unchecked') {
+      setSttState('unchecked');
+      setStatusMsg('STT đã thay đổi. Vui lòng bấm "Kiểm tra STT" trước khi tiếp tục.');
+    }
+  };
+
+  const handleCheckSTT = async () => {
     if (!stt) {
       alert('Vui lòng nhập Mã định danh (STT/ID) trước!');
       return;
     }
     setIsLoading(true);
-    setStatusMsg('Đang đồng bộ dữ liệu...');
+    setStatusMsg('Đang kiểm tra dữ liệu...');
     try {
       const docRef = doc(db, 'girls', stt);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
-        setName(data.name || '');
-        setWish(data.wish || '');
-        setCroppedImage(data.imageUrl ? data.imageUrl : null);
-        setStatusMsg('Dữ liệu đã được tải.');
+        const ownerUid = data.authorUid;
+        
+        if (!ownerUid || ownerUid === currentUser.uid) {
+          setName(data.name || '');
+          setWish(data.wish || '');
+          setSignature(data.signature || '');
+          setCroppedImage(data.imageUrl ? data.imageUrl : null);
+          setImageSrc(null);
+          setSttState('owned');
+          setStatusMsg('STT đã có dữ liệu và thuộc quyền sở hữu của BẠN. Được phép sửa.');
+        } else {
+          setName('');
+          setWish('');
+          setSignature('');
+          setCroppedImage(null);
+          setImageSrc(null);
+          setSttState('locked');
+          setStatusMsg(`STT Bị Khóa. Đã được thay đổi bởi: ${data.authorEmail || 'Người khác'}. Bạn KHÔNG CÓ QUYỀN sửa.`);
+        }
       } else {
         setName('');
         setWish('');
+        setSignature('');
         setCroppedImage(null);
-        setStatusMsg('ID mới. Bạn có thể bắt đầu tạo.');
+        setImageSrc(null);
+        setSttState('available');
+        setStatusMsg('STT Hợp Lệ (Trống). Bạn có thể biên soạn và lưu mới.');
       }
     } catch (err) {
       console.error(err);
-      setStatusMsg('Lỗi đồng bộ!');
+      setStatusMsg('Lỗi kiểm tra hệ thống!');
     }
     setIsLoading(false);
   };
 
+  const handleClearForm = () => {
+    setStt('');
+    setName('');
+    setWish('');
+    setSignature('');
+    setCroppedImage(null);
+    setImageSrc(null);
+    setSttState('unchecked');
+    setStatusMsg('');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  };
+
   const handleSave = async () => {
+    if (sttState === 'unchecked') {
+      alert('Vui lòng nhấn nút "Kiểm tra STT" để hệ thống xác nhận dữ liệu trước khi lưu!');
+      return;
+    }
+    if (sttState === 'locked') {
+      alert('Thao tác từ chối: Bạn không có quyền ghi đè lên STT của người khác!');
+      return;
+    }
     if (!stt || !name || !wish) {
       alert('Bạn cần điền tối thiểu STT, Tên và Lời chúc.');
       return;
@@ -222,8 +294,11 @@ export default function SystemRemits() {
         stt,
         name,
         wish,
+        signature,
         imageUrl: finalImageUrl,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        authorUid: currentUser.uid,
+        authorEmail: currentUser.email || 'Admin'
       }, { merge: true });
 
       setStatusMsg('Hoàn tất! Hệ thống đã ghi nhận.');
@@ -237,13 +312,14 @@ export default function SystemRemits() {
 
   const handlePreview = () => {
     if (!name || (!croppedImage && !imageSrc)) {
-      alert('Chúng tôi cần biết Tên và có Ảnh để có thể giả lập bản xem trước!');
+      alert('Chúng tôi cần biết Danh xưng và có Ảnh để có thể giả lập bản xem trước!');
       return;
     }
     const previewData = {
        stt: stt || '00',
-       name: name || 'Tên Khách Mời',
+       name: name || 'Danh Xưng Giả Lập',
        wish: wish || 'Mong mọi điều tốt lành và vui vẻ nhất sẽ đến với bạn trong ngày hôm nay.',
+       signature: signature || '',
        imageUrl: croppedImage || imageSrc
     };
     localStorage.setItem('temp_preview_83', JSON.stringify(previewData));
@@ -321,213 +397,319 @@ export default function SystemRemits() {
           <p className="opacity-50 text-xs sm:text-sm font-medium mt-2">Cập nhật thông tin hoa khôi theo mã định danh nhanh nhất.</p>
         </div>
 
-        <div className="w-full h-[1px] bg-[#1c1a19]/10" />
-
-        {/* CỤM 1: ĐỊNH DANH */}
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5">
-            <div className="flex flex-col gap-2 w-full">
-              <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Mã định danh (STT)</label>
-              <input 
-                type="text" 
-                value={stt}
-                onChange={e => setStt(e.target.value)}
-                placeholder="VD: 01, 15, NgocLan" 
-                className="w-full bg-transparent border-b border-[#1c1a19]/20 focus:border-[#a65d57] outline-none py-2 text-2xl font-serif-editorial transition-all"
-              />
-            </div>
+        <div className="flex bg-[#1c1a19]/5 rounded-xl p-1 shrink-0 w-full sm:w-auto self-start mt-2">
             <button 
-              onClick={handleLoadExisting}
-              disabled={isLoading}
-              className="w-full sm:w-auto bg-[#1c1a19]/5 hover:bg-[#1c1a19]/10 text-[#1c1a19] px-6 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 shrink-0 active:scale-[0.98]"
+               onClick={() => setViewMode('editor')} 
+               className={`flex-1 sm:flex-none uppercase px-6 py-3 sm:py-2 text-[10px] sm:text-xs font-bold tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all ${viewMode === 'editor' ? 'bg-white shadow-sm text-[#1c1a19]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
             >
-              <DownloadCloud size={16} /> Đồng bộ
+               <Edit3 size={16} /> Trình soạn thảo
             </button>
-          </div>
+            <button 
+               onClick={() => setViewMode('dashboard')} 
+               className={`flex-1 sm:flex-none uppercase px-6 py-3 sm:py-2 text-[10px] sm:text-xs font-bold tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all ${viewMode === 'dashboard' ? 'bg-white shadow-sm text-[#a65d57]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
+            >
+               <LayoutDashboard size={16} /> Quản lý Dữ liệu
+            </button>
         </div>
 
         <div className="w-full h-[1px] bg-[#1c1a19]/10" />
 
-        {/* CỤM 2: NỘI DUNG CHÍNH */}
-        <div className="flex flex-col gap-10">
-          <div className="flex flex-col gap-2">
-            <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Danh xưng hiển thị</label>
-            <input 
-              type="text" 
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Nguyễn Thị A..." 
-              className="w-full bg-transparent border-b border-[#1c1a19]/20 focus:border-[#a65d57] outline-none py-3 text-3xl sm:text-4xl font-serif-editorial italic transition-all"
-            />
-          </div>
-
-          <div className="flex flex-col gap-3 sm:gap-2 relative">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-1">
-               <label className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50 block">Trích dẫn & Lời chúc</label>
-               <div className="flex bg-[#1c1a19]/5 rounded-lg p-1 self-start sm:self-auto w-full sm:w-auto">
-                 <button 
-                   onClick={() => setActiveTab('write')} 
-                   className={`flex-1 sm:flex-none uppercase px-4 py-2 sm:py-1.5 text-[9px] sm:text-xs font-bold tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all ${activeTab === 'write' ? 'bg-white shadow-sm text-[#1c1a19]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
-                 >
-                   <PenTool size={12} /> Soạn thảo
-                 </button>
-                 <button 
-                   onClick={() => setActiveTab('preview')} 
-                   className={`flex-1 sm:flex-none uppercase px-4 py-2 sm:py-1.5 text-[9px] sm:text-xs font-bold tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all ${activeTab === 'preview' ? 'bg-white shadow-sm text-[#a65d57]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
-                 >
-                   <Eye size={12} /> Xem nhanh
-                 </button>
-               </div>
-            </div>
-
-            {activeTab === 'write' ? (
-              <div className="w-full flex flex-col transition-colors group">
-                {/* Markdown Toolbar */}
-                <div className="flex items-center gap-1 pb-3 mb-2 border-b border-[#1c1a19]/10 overflow-x-auto shrink-0 touch-pan-x opacity-60 group-focus-within:opacity-100 transition-opacity">
-                   <button onClick={() => handleFormat('**', '**')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Bold"><Bold size={16} /></button>
-                   <button onClick={() => handleFormat('_', '_')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Italic"><Italic size={16} /></button>
-                   <div className="w-[1px] h-4 bg-[#1c1a19]/20 mx-1 shrink-0" />
-                   <button onClick={() => handleFormat('> ', '')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Quote"><Quote size={16} /></button>
-                   <button onClick={() => handleFormat('- ', '')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="List"><List size={16} /></button>
-                   <div className="w-[1px] h-4 bg-[#1c1a19]/20 mx-1 shrink-0" />
-                   <button onClick={() => handleFormat('[Title](', ')')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Link"><Link size={16} /></button>
-                </div>
-                
-                <textarea 
-                  id="wish-editor"
-                  value={wish}
-                  onChange={e => setWish(e.target.value)}
-                  placeholder="Hỗ trợ Markdown (**Đậm**, _Nghiêng_)..." 
-                  rows={6}
-                  className="w-full bg-transparent border-none outline-none py-2 text-xl font-serif-editorial resize-y leading-[1.6]"
-                />
+        {viewMode === 'dashboard' ? (
+           <div className="flex flex-col gap-6 w-full animate-fadeIn">
+              <div className="flex justify-between items-center px-1">
+                <h2 className="text-2xl font-bold font-serif-editorial">Danh sách đã nộp ({dashboardData.length})</h2>
+                <button onClick={loadDashboard} className="text-[10px] font-bold uppercase tracking-widest text-[#a65d57] hover:underline p-2 flex items-center gap-1"><RotateCw size={12}/> Làm mới</button>
               </div>
-            ) : (
-              <div className="w-full bg-white/50 border border-[#1c1a19]/10 p-6 rounded-[1rem] min-h-[160px] max-h-[400px] overflow-y-auto mt-2">
-                 <div className="font-serif-editorial relative z-10 text-justify w-full">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: ({node, ...props}) => <p className="text-[1.3rem] leading-[1.5] text-[#1c1a19] mb-4" {...props} />,
-                        strong: ({node, ...props}) => <strong className="font-bold text-[#a65d57]" {...props} />,
-                        em: ({node, ...props}) => <em className="italic font-light" {...props} />,
-                        blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#a65d57] pl-4 italic opacity-80 shrink-0 mb-4" {...props} />,
-                        ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-2 text-[1.2rem]" {...props} />,
-                        a: ({node, ...props}) => <a className="text-[#a65d57] underline underline-offset-4" {...props} />
-                      }}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {dashboardData.map(d => {
+                    const isMine = !d.authorUid || d.authorUid === currentUser.uid;
+                    return (
+                        <div key={d.stt} className={`flex flex-col gap-3 p-5 rounded-2xl border transition-all hover:-translate-y-1 hover:shadow-md ${isMine ? 'border-[#a65d57]/40 bg-white shadow-sm' : 'border-[#1c1a19]/10 bg-[#1c1a19]/5'} relative`}>
+                            <div className="flex justify-between items-start gap-3">
+                                <div className="flex flex-col flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                       <span className="text-[10px] font-bold uppercase tracking-widest text-white bg-[#1c1a19] px-2 py-0.5 rounded-full inline-block">STT: {d.stt}</span>
+                                       {isMine && <span className="text-[9px] font-bold uppercase text-green-700 bg-green-100 px-2 py-0.5 rounded-sm inline-block tracking-widest">Sở hữu</span>}
+                                    </div>
+                                    <h3 className="text-xl font-serif-editorial font-bold mt-2 text-[#1c1a19] truncate">{d.name}</h3>
+                                    <p className="text-[10px] font-mono text-[#1c1a19]/50 mt-1 truncate tracking-wider" title={d.authorEmail}>{d.authorEmail || 'Legacy/Ẩn danh'}</p>
+                                </div>
+                                {d.imageUrl && <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-[2px] border-white shadow-sm"><img src={d.imageUrl} className="w-full h-full object-cover bg-[#1c1a19]/10" /></div>}
+                            </div>
+                            <div className="flex justify-end mt-2 pt-3 border-t border-[#1c1a19]/5">
+                                {isMine ? (
+                                    <button onClick={() => {
+                                       setStt(d.stt);
+                                       setViewMode('editor');
+                                       setName(d.name || '');
+                                       setWish(d.wish || '');
+                                       setSignature(d.signature || '');
+                                       setCroppedImage(d.imageUrl || null);
+                                       setImageSrc(null);
+                                       setSttState('owned');
+                                       setStatusMsg('Đã chuyển sang chế độ sửa từ Dashboard. Hãy chỉnh sửa và nhấn Lưu.');
+                                       window.scrollTo({top: 0, behavior: 'smooth'});
+                                    }} className="px-5 py-2.5 bg-[#1c1a19] text-white text-[10px] uppercase tracking-widest font-bold rounded-lg hover:bg-[#34302e] transition-colors flex items-center gap-2">
+                                       <Edit3 size={14} /> Chỉnh sửa
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-1.5 px-3 py-2.5 bg-[#1c1a19]/10 text-[#1c1a19]/50 text-[10px] uppercase tracking-widest font-bold rounded-lg cursor-not-allowed">
+                                        <Lock size={14} /> Hệ thống khóa
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )
+                })}
+                {dashboardData.length === 0 && !isLoading && (
+                    <p className="text-sm opacity-50 italic sm:col-span-2 text-center py-10">Chưa có dữ liệu nào trên hệ thống.</p>
+                )}
+                {isLoading && (
+                    <div className="col-span-full py-10 flex justify-center"><Loader2 className="animate-spin text-[#a65d57]" size={32} /></div>
+                )}
+              </div>
+           </div>
+        ) : (
+           <div className="flex flex-col gap-10 w-full animate-fadeIn">
+              {/* CỤM 1: ĐỊNH DANH */}
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5">
+                  <div className="flex flex-col gap-2 w-full">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Mã định danh (STT)</label>
+                    <input 
+                      type="text" 
+                      value={stt}
+                      onChange={e => handleSttChange(e.target.value)}
+                      placeholder="VD: 01, 15, NgocLan" 
+                      className={`w-full bg-transparent border-b outline-none py-2 text-2xl font-serif-editorial transition-all ${sttState === 'locked' ? 'border-red-500 focus:border-red-600 text-red-600' : 'border-[#1c1a19]/20 focus:border-[#a65d57]'}`}
+                    />
+                    {sttState !== 'unchecked' && (
+                      <div className="text-[11px] font-medium flex items-center gap-1.5 mt-2 transition-all opacity-100 bg-white/50 p-2 border border-[#1c1a19]/5 rounded-md">
+                        {sttState === 'available' && <><CheckCircle2 size={14} className="text-green-600" /> <span className="text-green-700 font-bold tracking-wide">KHẢ DỤNG - Bản ghi Mới, hãy nhập tên</span></>}
+                        {sttState === 'owned' && <><Edit3 size={14} className="text-[#a65d57]" /> <span className="text-[#a65d57] font-bold tracking-wide">THUỘC VỀ BẠN - Đang mở Cấp quyền sửa</span></>}
+                        {sttState === 'locked' && <><ShieldAlert size={14} className="text-red-500" /> <span className="text-red-600 font-bold tracking-wide">ĐÃ BỊ KHÓA BỞI NGƯỜI KHÁC</span></>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 sm:w-auto w-full">
+                    {sttState !== 'unchecked' && (
+                      <button 
+                        onClick={handleClearForm}
+                        className="w-full sm:w-auto bg-white text-[#a65d57] px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 border border-[#a65d57]/30 hover:bg-[#a65d57]/5 shadow-sm"
+                      >
+                        <FilePlus size={16} /> Clear / Thêm mới
+                      </button>
+                    )}
+                    <button 
+                      onClick={handleCheckSTT}
+                      disabled={isLoading || !stt}
+                      className="w-full sm:w-auto bg-[#1c1a19] text-white px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 active:scale-[0.98] disabled:opacity-50 hover:bg-[#34302e] shadow-md border border-[#1c1a19]/20"
                     >
-                      {wish || '*Chưa có nội dung.*'}
-                    </ReactMarkdown>
-                 </div>
+                      {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                      <span className="mt-0.5">Kiểm tra STT</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            )}
-            
-          </div>
-        </div>
 
-        <div className="w-full h-[1px] bg-[#1c1a19]/10" />
+              <div className="w-full h-[1px] bg-[#1c1a19]/10" />
 
-        {/* CỤM 3: HÌNH ẢNH */}
-        <div className="flex flex-col gap-6">
-           <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Ảnh chân dung</label>
-           
-           {!imageSrc && (
-             <div className="flex flex-col sm:flex-row gap-5 items-center">
-               {croppedImage && (
-                 <div className="w-28 h-28 rounded-full overflow-hidden border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.15)] shrink-0">
-                   <img src={croppedImage} alt="Avatar" className="w-full h-full object-cover" />
-                 </div>
-               )}
-               <input 
-                 type="file" 
-                 accept="image/*" 
-                 ref={fileInputRef} 
-                 onChange={handleFileChange} 
-                 className="hidden" 
-               />
-               <button 
-                 onClick={() => fileInputRef.current?.click()}
-                 className="flex flex-col items-center justify-center gap-3 border-[1.5px] border-dashed border-[#1c1a19]/20 hover:border-[#1c1a19]/50 hover:bg-[#1c1a19]/5 text-[#1c1a19]/70 w-full rounded-[1rem] transition-all h-32 active:scale-[0.99]"
-               >
-                 <Camera size={28} strokeWidth={1.5} />
-                 <span className="font-semibold text-xs uppercase tracking-widest">Tải ảnh lên</span>
-               </button>
-             </div>
-           )}
-
-           {imageSrc && (
-             <div className="flex flex-col gap-4">
-               <div className="relative w-full h-[60vh] sm:h-[450px] bg-[#1c1a19] rounded-[1rem] overflow-hidden shadow-inner">
-                 <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={1}
-                    cropShape="round"
-                    showGrid={true}
-                    onCropChange={setCrop}
-                    onCropComplete={onCropComplete}
-                    onZoomChange={setZoom}
-                  />
-               </div>
-               
-               <div className="flex flex-col gap-4 p-5 bg-[#faf8f5] rounded-[1rem] border border-[#1c1a19]/5">
-                  <div className="flex items-center gap-4 w-full">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a65d57] shrink-0">Scale</span>
-                    <input
-                      type="range"
-                      value={zoom}
-                      min={1}
-                      max={3}
-                      step={0.05}
-                      aria-labelledby="Zoom"
-                      onChange={(e) => setZoom(e.target.value)}
-                      className="w-full h-1.5 bg-[#1c1a19]/10 rounded-lg appearance-none cursor-pointer accent-[#a65d57]"
+              <div className={`flex flex-col gap-10 transition-all duration-300 ${sttState === 'unchecked' || sttState === 'locked' ? 'opacity-30 pointer-events-none grayscale-[0.5]' : 'opacity-100'}`}>
+                {/* CỤM 2: NỘI DUNG CHÍNH */}
+                <div className="flex flex-col gap-10">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Danh xưng hiển thị</label>
+                    <input 
+                      type="text" 
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      placeholder="Ví dụ: Cẩm Tú, Cặp Bài Trùng, Hotgirl số 1..." 
+                      className="w-full bg-transparent border-b border-[#1c1a19]/20 focus:border-[#a65d57] outline-none py-3 text-3xl sm:text-4xl font-serif-editorial italic transition-all"
                     />
                   </div>
-                  
-                  <div className="flex flex-row justify-between items-center w-full gap-2">
-                    <div className="flex gap-2 shrink-0">
-                      <button 
-                        onClick={() => handleManipulate('rotate')}
-                        className="p-3 bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 rounded-xl transition-colors active:scale-95 flex items-center justify-center"
-                        title="Xoay trái"
-                      >
-                        <RotateCw size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleManipulate('flip')}
-                        className="p-3 bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 rounded-xl transition-colors active:scale-95 flex items-center justify-center"
-                        title="Lật ngang"
-                      >
-                        <FlipHorizontal size={18} />
-                      </button>
+
+                  <div className="flex flex-col gap-3 sm:gap-2 relative">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-1">
+                       <label className="text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50 block">Trích dẫn & Lời chúc</label>
+                       <div className="flex bg-[#1c1a19]/5 rounded-lg p-1 self-start sm:self-auto w-full sm:w-auto">
+                         <button 
+                           onClick={() => setActiveTab('write')} 
+                           className={`flex-1 sm:flex-none uppercase px-4 py-2 sm:py-1.5 text-[9px] sm:text-xs font-bold tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all ${activeTab === 'write' ? 'bg-white shadow-sm text-[#1c1a19]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
+                         >
+                           <PenTool size={12} /> Soạn thảo
+                         </button>
+                         <button 
+                           onClick={() => setActiveTab('preview')} 
+                           className={`flex-1 sm:flex-none uppercase px-4 py-2 sm:py-1.5 text-[9px] sm:text-xs font-bold tracking-wider rounded-md flex items-center justify-center gap-1.5 transition-all ${activeTab === 'preview' ? 'bg-white shadow-sm text-[#a65d57]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
+                         >
+                           <Eye size={12} /> Xem nhanh
+                         </button>
+                       </div>
                     </div>
 
-                    <div className="flex gap-2 flex-1 justify-end">
-                      <button 
-                        onClick={() => setImageSrc(null)}
-                        className="bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 px-4 py-3 rounded-xl font-bold transition-colors text-xs uppercase tracking-wider active:scale-95"
-                      >
-                        Hủy
-                      </button>
-                      <button 
-                        onClick={handleFinishCrop}
-                        className="bg-[#1c1a19] hover:bg-[#34302e] text-white px-5 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-95 w-full sm:w-auto"
-                      >
-                        Xác nhận
-                      </button>
-                    </div>
+                    {activeTab === 'write' ? (
+                      <div className="w-full flex flex-col transition-colors group">
+                        {/* Markdown Toolbar */}
+                        <div className="flex items-center gap-1 pb-3 mb-2 border-b border-[#1c1a19]/10 overflow-x-auto shrink-0 touch-pan-x opacity-60 group-focus-within:opacity-100 transition-opacity">
+                           <button onClick={() => handleFormat('**', '**')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Bold"><Bold size={16} /></button>
+                           <button onClick={() => handleFormat('_', '_')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Italic"><Italic size={16} /></button>
+                           <div className="w-[1px] h-4 bg-[#1c1a19]/20 mx-1 shrink-0" />
+                           <button onClick={() => handleFormat('> ', '')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Quote"><Quote size={16} /></button>
+                           <button onClick={() => handleFormat('- ', '')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="List"><List size={16} /></button>
+                           <div className="w-[1px] h-4 bg-[#1c1a19]/20 mx-1 shrink-0" />
+                           <button onClick={() => handleFormat('[Title](', ')')} className="p-2 hover:bg-[#1c1a19]/10 rounded-md text-[#1c1a19] transition-colors" title="Link"><Link size={16} /></button>
+                        </div>
+                        
+                        <textarea 
+                          id="wish-editor"
+                          value={wish}
+                          onChange={e => setWish(e.target.value)}
+                          placeholder="Hỗ trợ Markdown (**Đậm**, _Nghiêng_)..." 
+                          rows={6}
+                          className="w-full bg-transparent border-none outline-none py-2 text-xl font-serif-editorial resize-y leading-[1.6]"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full bg-white/50 border border-[#1c1a19]/10 p-6 rounded-[1rem] min-h-[160px] max-h-[400px] overflow-y-auto mt-2">
+                         <div className="font-serif-editorial relative z-10 text-justify w-full">
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({node, ...props}) => <p className="text-[1.3rem] leading-[1.5] text-[#1c1a19] mb-4" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-[#a65d57]" {...props} />,
+                                em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#a65d57] pl-4 italic opacity-80 shrink-0 mb-4" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-2 text-[1.2rem]" {...props} />,
+                                a: ({node, ...props}) => <a className="text-[#a65d57] underline underline-offset-4" {...props} />
+                              }}
+                            >
+                              {wish || '*Chưa có nội dung.*'}
+                            </ReactMarkdown>
+                         </div>
+                      </div>
+                    )}
+                    
                   </div>
-               </div>
-             </div>
-           )}
-        </div>
 
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Người gửi / Ký tên (Không bắt buộc)</label>
+                    <input 
+                      type="text" 
+                      value={signature}
+                      onChange={e => setSignature(e.target.value)}
+                      placeholder="Ví dụ: - Ban Tổ Chức, Thằng bạn chí cốt..." 
+                      className="w-full bg-transparent border-b border-[#1c1a19]/20 focus:border-[#a65d57] outline-none py-2 text-xl font-serif-editorial transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="w-full h-[1px] bg-[#1c1a19]/10" />
+
+                {/* CỤM 3: HÌNH ẢNH */}
+                <div className="flex flex-col gap-6">
+                   <label className="text-[10px] uppercase tracking-[0.2em] font-semibold text-[#1c1a19]/50">Ảnh chân dung</label>
+                   
+                   {!imageSrc && (
+                     <div className="flex flex-col sm:flex-row gap-5 items-center">
+                       {croppedImage && (
+                         <div className="w-28 h-28 rounded-full overflow-hidden border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.15)] shrink-0">
+                           <img src={croppedImage} alt="Avatar" className="w-full h-full object-cover" />
+                         </div>
+                       )}
+                       <input 
+                         type="file" 
+                         accept="image/*" 
+                         ref={fileInputRef} 
+                         onChange={handleFileChange} 
+                         className="hidden" 
+                       />
+                       <button 
+                         onClick={() => fileInputRef.current?.click()}
+                         className="flex flex-col items-center justify-center gap-3 border-[1.5px] border-dashed border-[#1c1a19]/20 hover:border-[#1c1a19]/50 hover:bg-[#1c1a19]/5 text-[#1c1a19]/70 w-full rounded-[1rem] transition-all h-32 active:scale-[0.99]"
+                       >
+                         <Camera size={28} strokeWidth={1.5} />
+                         <span className="font-semibold text-xs uppercase tracking-widest">Tải ảnh lên</span>
+                       </button>
+                     </div>
+                   )}
+
+                   {imageSrc && (
+                     <div className="flex flex-col gap-4">
+                       <div className="relative w-full h-[60vh] sm:h-[450px] bg-[#1c1a19] rounded-[1rem] overflow-hidden shadow-inner">
+                         <Cropper
+                            image={imageSrc}
+                            crop={crop}
+                            zoom={zoom}
+                            aspect={1}
+                            cropShape="round"
+                            showGrid={true}
+                            onCropChange={setCrop}
+                            onCropComplete={onCropComplete}
+                            onZoomChange={setZoom}
+                          />
+                       </div>
+                       
+                       <div className="flex flex-col gap-4 p-5 bg-[#faf8f5] rounded-[1rem] border border-[#1c1a19]/5">
+                          <div className="flex items-center gap-4 w-full">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#a65d57] shrink-0">Scale</span>
+                            <input
+                              type="range"
+                              value={zoom}
+                              min={1}
+                              max={3}
+                              step={0.05}
+                              aria-labelledby="Zoom"
+                              onChange={(e) => setZoom(e.target.value)}
+                              className="w-full h-1.5 bg-[#1c1a19]/10 rounded-lg appearance-none cursor-pointer accent-[#a65d57]"
+                            />
+                          </div>
+                          
+                          <div className="flex flex-row justify-between items-center w-full gap-2">
+                            <div className="flex gap-2 shrink-0">
+                              <button 
+                                onClick={() => handleManipulate('rotate')}
+                                className="p-3 bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 rounded-xl transition-colors active:scale-95 flex items-center justify-center"
+                                title="Xoay trái"
+                              >
+                                <RotateCw size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleManipulate('flip')}
+                                className="p-3 bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 rounded-xl transition-colors active:scale-95 flex items-center justify-center"
+                                title="Lật ngang"
+                              >
+                                <FlipHorizontal size={18} />
+                              </button>
+                            </div>
+
+                            <div className="flex gap-2 flex-1 justify-end">
+                              <button 
+                                onClick={() => setImageSrc(null)}
+                                className="bg-white hover:bg-black/5 text-[#1c1a19] border border-[#1c1a19]/10 px-4 py-3 rounded-xl font-bold transition-colors text-xs uppercase tracking-wider active:scale-95"
+                              >
+                                Hủy
+                              </button>
+                              <button 
+                                onClick={handleFinishCrop}
+                                className="bg-[#1c1a19] hover:bg-[#34302e] text-white px-5 py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center justify-center gap-2 text-xs uppercase tracking-wider active:scale-95 w-full sm:w-auto"
+                              >
+                                Xác nhận
+                              </button>
+                            </div>
+                          </div>
+                       </div>
+                     </div>
+                   )}
+                </div>
+
+              </div> {/* /div wrapper disable form */}
+           </div>
+        )} {/* /ternary viewMode */}
       </div>
 
-      {/* FLOAT ACTION BAR (MOBILE OPTIMIZED) */}
-      <div className="fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-[#1c1a19]/10 p-4 sm:p-6 z-[100] pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+      {/* FLOAT ACTION BAR (MOBILE OPTIMIZED) - CHỈ HIỂN THỊ KHI Ở EDITOR */}
+      {viewMode === 'editor' && (
+      <div className={`fixed bottom-0 left-0 w-full bg-white/80 backdrop-blur-xl border-t border-[#1c1a19]/10 p-4 sm:p-6 z-[100] pb-safe shadow-[0_-10px_30px_rgba(0,0,0,0.05)] transition-all duration-300 ${sttState === 'unchecked' || sttState === 'locked' ? 'translate-y-[150%]' : 'translate-y-0'}`}>
          <div className="max-w-3xl mx-auto flex flex-col gap-3">
            
            <div className="flex items-center gap-2 justify-center text-[11px] uppercase tracking-widest font-semibold text-center w-full mb-1">
@@ -550,11 +732,12 @@ export default function SystemRemits() {
                disabled={isLoading}
                className="flex-1 h-14 sm:h-auto sm:py-4 rounded-2xl bg-[#a65d57] hover:bg-[#8e4f4a] text-white font-bold transition-all shadow-[0_4px_20px_rgba(166,93,87,0.4)] text-[11px] sm:text-sm uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale active:scale-[0.98]"
              >
-               {isLoading ? 'Đang tải...' : <><Save size={18} /> Lưu Dữ Liệu</>}
+               {isLoading ? 'Đang cập nhật...' : <><Save size={18} /> Lưu Dữ Liệu</>}
              </button>
            </div>
          </div>
       </div>
+      )}
 
     </div>
   );

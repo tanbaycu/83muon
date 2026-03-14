@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=Inter:wght@200;300;400;500;600;700;800&display=swap');
+
+:root {
+  --font-serif: 'Cormorant Garamond', serif;
+  --font-sans: 'Inter', sans-serif;
+  --color-oatmeal: #f4f2ee; /* Soft, warm magazine paper */
+  --color-charcoal: #1c1a19; /* Extreme dark brown/black */
+  --color-rust: #c25e3c; /* burnt orange elegant accent */
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-oatmeal);
+  color: var(--color-charcoal);
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden; /* Strict 1:1 format */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle organic noise to mimic high quality paper */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.font-serif-editorial {
+  font-family: var(--font-serif);
+}
+
+.font-sans-editorial {
+  font-family: var(--font-sans);
+}
+
+/* Inline typing input effect */
+.inline-input-editorial {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid rgba(28, 26, 25, 0.2);
+  outline: none;
+  text-align: center;
+  transition: border-bottom-color 0.4s ease;
+  width: 2.5em; /* Auto width based on typable content */
+}
+
+.inline-input-editorial:focus {
+  border-bottom-color: var(--color-rust);
+}
+
+/* Vertical Text */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* Giant background text stroke */
+.text-stroke-huge {
+  -webkit-text-stroke: 1px rgba(28, 26, 25, 0.1);
+  color: transparent;
+}
+
+.text-stroke-white {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+  color: transparent;
+}
+
+/* Editorial Marquee */
+@keyframes marquee-left {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-right {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0%); }
+}
+
+.animate-marquee-l {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee-left 30s linear infinite;
+}
+
+.animate-marquee-r {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee-right 30s linear infinite;
+}
+
+

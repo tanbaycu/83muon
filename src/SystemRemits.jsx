@@ -1,11 +1,13 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../lib/firebase';
+import { signInWithPopup, onAuthStateChanged, signOut } from 'firebase/auth';
+import { db, storage, auth, provider } from '../lib/firebase';
 import Cropper from 'react-easy-crop';
-import { Camera, Save, Loader2, CheckCircle2, Eye, DownloadCloud, Bold, Italic, Link, List, Quote, PenTool, RotateCw, FlipHorizontal } from 'lucide-react';
+import { Camera, Save, Loader2, CheckCircle2, Eye, DownloadCloud, Bold, Italic, Link, List, Quote, PenTool, RotateCw, FlipHorizontal, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import imageCompression from 'browser-image-compression';
 
 const getCroppedImg = async (imageSrc, pixelCrop) => {
   const image = await new Promise((resolve, reject) => {
@@ -74,8 +76,30 @@ export default function SystemRemits() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsAuthChecking(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleLogin = async () => {
+    setIsAuthChecking(true);
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      console.error(err);
+      alert('Đăng nhập thất bại: ' + err.message);
+      setIsAuthChecking(false);
+    }
+  };
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -168,7 +192,30 @@ export default function SystemRemits() {
       }
       
       if (finalImageUrl && finalImageUrl.startsWith('data:image')) {
-        setStatusMsg('Đang tải ảnh lên máy chủ...');
+        setStatusMsg('Đang xử lý và nén ảnh (Tối ưu bằng thuật toán)...');
+        
+        // Chuyển base64 DataURL sang File Blob cho library
+        const res = await fetch(finalImageUrl);
+        const blob = await res.blob();
+        const imageFile = new File([blob], `avatar_${stt}.jpg`, { type: 'image/jpeg' });
+
+        const options = {
+          maxSizeMB: 0.15, // Dưới ~150KB
+          maxWidthOrHeight: 800,
+          useWebWorker: true
+        };
+
+        const compressedFile = await imageCompression(imageFile, options);
+
+        // Chuyển từ Blob File ngược lại sang base64 data_url cho uploadString
+        finalImageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(compressedFile);
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+
+        setStatusMsg('Đang tải ảnh lên máy chủ (Siêu nhẹ)...');
         const imageRef = ref(storage, `portraits/${stt}_${Date.now()}.jpg`);
         await uploadString(imageRef, finalImageUrl, 'data_url');
         finalImageUrl = await getDownloadURL(imageRef);
@@ -223,14 +270,54 @@ export default function SystemRemits() {
     }, 0);
   };
 
+  if (isAuthChecking) {
+    return (
+      <div className="h-[100dvh] w-full flex items-center justify-center bg-[#faf8f5]">
+        <Loader2 className="animate-spin text-[#a65d57]" size={32} />
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="h-[100dvh] w-full flex flex-col items-center justify-center bg-[#faf8f5] text-[#1c1a19] font-sans-editorial px-6">
+        <h1 className="text-4xl font-serif-editorial text-center mb-4">Hệ thống <br/>Quản lý CSDL</h1>
+        <p className="opacity-50 text-sm text-center mb-10 max-w-sm">
+          Vì lý do bảo mật, bạn cần đăng nhập tài khoản có quyền Admin để tiếp tục tải ảnh lên Firebase Storage.
+        </p>
+        <button 
+          onClick={handleLogin}
+          className="bg-[#1c1a19] text-white px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-[#34302e] transition-colors shadow-lg active:scale-95 flex items-center gap-3"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+          </svg>
+          Đăng nhập với Google
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="h-[100dvh] w-full overflow-y-auto bg-[#faf8f5] text-[#1c1a19] font-sans-editorial">
       <div className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-12 pb-32">
         
         {/* HEADER */}
-        <div className="flex flex-col gap-2">
-          <div className="inline-block px-3 py-1 bg-[#a65d57]/10 text-[#a65d57] text-[10px] font-bold tracking-[0.2em] rounded-full w-max uppercase">
-            Workspace Admin
+        <div className="flex flex-col gap-2 relative">
+          <div className="flex items-center justify-between w-full">
+            <div className="inline-block px-3 py-1 bg-[#a65d57]/10 text-[#a65d57] text-[10px] font-bold tracking-[0.2em] rounded-full w-max uppercase">
+              Workspace Admin
+            </div>
+            <button 
+              onClick={() => signOut(auth)}
+              className="text-[#1c1a19]/50 hover:text-[#a65d57] transition-colors p-2"
+              title="Đăng xuất"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
           <h1 className="text-4xl sm:text-5xl font-serif-editorial tracking-tight font-light mt-3 leading-[1.1]">
             Trung tâm <br className="block sm:hidden"/> Điều phối <span className="font-bold italic">Dữ liệu</span>

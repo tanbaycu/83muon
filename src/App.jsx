@@ -2,18 +2,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import anime from 'animejs';
 import { ArrowLeft, ChevronUp, QrCode } from 'lucide-react';
-import { members, defaultWish } from './members';
+import { Routes, Route, useSearchParams } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import SystemRemits from './SystemRemits';
+import { defaultWish } from './members'; 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-// --- COMPONENT: Circular Text SVG for Mobile Bottom Sheet ---
-const CircularText = ({ text }) => {
+// --- COMPONENT: Circular Text SVG + Avatar ---
+const AvatarWithCircularText = ({ text, imgSrc }) => {
   return (
-    <div className="relative w-28 h-28 md:w-32 md:h-32 animate-[spin_12s_linear_infinite] shrink-0">
-      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
-        <path id="circlePath" fill="none" d="M 50, 50 m -40, 0 a 40,40 0 0,1 80,0 a 40,40 0 0,1 -80,0" />
-        <text className="text-[10.5px] font-sans-editorial tracking-[0.25em] uppercase fill-[var(--color-charcoal)]">
-          <textPath href="#circlePath" startOffset="0%">{text}</textPath>
-        </text>
-      </svg>
+    <div className="relative w-32 h-32 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
+      <div className="absolute w-[60%] h-[60%] rounded-full overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.15)] bg-[var(--color-charcoal)]/5 z-10 border-[1.5px] border-[var(--color-oatmeal)]">
+         {imgSrc ? (
+           <img src={imgSrc} className="w-full h-full object-cover pointer-events-none" alt="Avatar" />
+         ) : (
+           <div className="w-full h-full bg-[var(--color-charcoal)]/10" />
+         )}
+      </div>
+      <div className="absolute inset-0 animate-[spin_12s_linear_infinite] pointer-events-none z-0">
+        <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible">
+          <path id="circlePath" fill="none" d="M 50, 50 m -40, 0 a 40,40 0 0,1 80,0 a 40,40 0 0,1 -80,0" />
+          <text className="text-[10.5px] font-sans-editorial tracking-[0.25em] uppercase fill-[var(--color-charcoal)]">
+            <textPath href="#circlePath" startOffset="0%">{text}</textPath>
+          </text>
+        </svg>
+      </div>
     </div>
   );
 };
@@ -49,7 +64,6 @@ const LoadingSVG = () => {
     if (svgContent && svgRef.current) {
       const paths = svgRef.current.querySelectorAll('path');
       paths.forEach(p => {
-        // Khôi phục mốc contrast đen thuần (#000000) và độ nét nét lên 8 để thấy rõ nhưng không dùng stroke-dasharray thủ công làm hỏng hình dáng chữ.
         p.setAttribute('stroke', '#000000'); 
         p.setAttribute('stroke-width', '8'); 
         p.setAttribute('fill', 'transparent'); 
@@ -57,19 +71,18 @@ const LoadingSVG = () => {
         p.setAttribute('stroke-linejoin', 'round');
       });
       
-      // Line drawing to Fill effect using AnimeJS timeline
       anime.timeline()
         .add({
           targets: paths,
           strokeDashoffset: [anime.setDashoffset, 0],
           easing: 'easeInOutSine',
-          duration: 4500, // Gọn gàng mượt mà
+          duration: 4500,
           delay: function(el, i) { return i * 150 },
         })
         .add({
           targets: paths,
           fill: ['transparent', '#000000'],
-          strokeWidth: ['8', '1.5'], // Fill màu và làm mỏng viền đi cho đẹp
+          strokeWidth: ['8', '1.5'],
           duration: 1000,
           easing: 'easeInQuad'
         }, '-=800'); 
@@ -77,7 +90,6 @@ const LoadingSVG = () => {
   }, [svgContent]);
 
   return (
-    // Bỏ mix-blend-multiply để SVG không bị chìm vào nền
     <div 
       ref={svgRef} 
       className="w-[300px] h-[300px] md:w-[450px] md:h-[450px] opacity-90 drop-shadow-md flex items-center justify-center pointer-events-none" 
@@ -86,67 +98,79 @@ const LoadingSVG = () => {
   );
 };
 
-const App = () => {
+// --- COMPONENT: CardViewer (Trang gốc) ---
+const CardViewer = () => {
   const [step, setStep] = useState(1);
   const [stt, setStt] = useState('');
   const [selectedGirl, setSelectedGirl] = useState(null);
   const [isInitiating, setIsInitiating] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [quoteOpen, setQuoteOpen] = useState(false); // Mobile UX state
+  const [quoteOpen, setQuoteOpen] = useState(false); 
   const inputRef = useRef(null);
+  const [searchParams] = useSearchParams();
 
-  // Focus input automatically on mount
+  // Load preview directly if preview_id is in URL or local preview
   useEffect(() => {
-    if (step === 1 && inputRef.current) {
+    const previewId = searchParams.get('preview_id');
+    const previewLocal = searchParams.get('preview');
+
+    if (previewLocal === 'local') {
+       const localData = localStorage.getItem('temp_preview_83');
+       if (localData) {
+          try {
+             setSelectedGirl(JSON.parse(localData));
+             setStep(2);
+             return;
+          } catch(e) { console.error('Lỗi parse preview data', e); }
+       }
+    }
+
+    if (previewId) {
+       setStt(previewId);
+       const fetchPreview = async () => {
+           const docRef = doc(db, 'girls', previewId);
+           const docSnap = await getDoc(docRef);
+           if (docSnap.exists()) {
+              setSelectedGirl(docSnap.data());
+              setStep(2);
+           }
+       };
+       fetchPreview();
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (step === 1 && inputRef.current && !searchParams.get('preview_id')) {
       inputRef.current.focus();
     }
-  }, [step]);
+  }, [step, searchParams]);
 
-  // Slideshow Logic for Frame 2
-  useEffect(() => {
-    if (step === 2 && selectedGirl?.images?.length > 1 && !quoteOpen) {
-      const interval = setInterval(() => {
-        setCurrentImageIndex((prev) => (prev + 1) % selectedGirl.images.length);
-      }, 5000); 
-      return () => clearInterval(interval);
-    }
-  }, [step, selectedGirl, quoteOpen]);
-
-  const handleOpenCard = () => {
-    const girl = members.find(m => m.stt === stt.padStart(2, '0'));
+  const handleOpenCard = async () => {
+    if (!stt) return;
+    setIsInitiating(true);
     
-    if (girl) {
-      setIsInitiating(true);
-      setTimeout(() => {
-        setCurrentImageIndex(0);
-        setSelectedGirl(girl);
-        setStep(2);
+    try {
+      const docRef = doc(db, 'girls', stt);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setTimeout(() => {
+          setSelectedGirl(docSnap.data());
+          setStep(2);
+          setIsInitiating(false);
+        }, 6000); // Intro Animation Delay
+      } else {
+        alert('Chưa có thông tin cho mã định danh này.');
         setIsInitiating(false);
-      }, 6000); // Điều chỉnh lại tgian xem intro
-    } else {
-      alert('Không tìm thấy tệp tài liệu cho mã định danh này.');
-    }
-  };
-
-  // Mobile Swipe/Tap Controllers
-  const nextImage = (e) => {
-    e.stopPropagation();
-    if (selectedGirl?.images?.length > 1) {
-        setCurrentImageIndex(prev => (prev + 1) % selectedGirl.images.length);
-    }
-  };
-  
-  const prevImage = (e) => {
-    e.stopPropagation();
-    if (selectedGirl?.images?.length > 1) {
-        setCurrentImageIndex(prev => (prev - 1 + selectedGirl.images.length) % selectedGirl.images.length);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi khi tải dữ liệu từ máy chủ.');
+      setIsInitiating(false);
     }
   };
 
   return (
     <div className="w-full h-full relative font-sans-editorial selection:bg-[var(--color-rust)] selection:text-white">
       
-      {/* Absolute decorative vertical text */}
       <div className="fixed top-8 right-6 md:top-12 md:left-8 vertical-text text-[10px] md:text-sm font-bold tracking-[0.4em] uppercase text-[var(--color-charcoal)]/30 pointer-events-none z-[100] hidden md:block">
         PROJECT VENUS // KÝ SỰ BÍ MẬT // TỪ NHỮNG QUÝ ÔNG
       </div>
@@ -161,7 +185,6 @@ const App = () => {
             transition={{ duration: 0.8 }}
             className="w-full h-[100dvh] flex flex-col justify-center z-10 bg-[var(--color-oatmeal)] overflow-hidden relative"
           >
-            {/* Siêu hiệu ứng Loading Overlay */}
             <AnimatePresence>
               {isInitiating && (
                 <motion.div 
@@ -191,13 +214,11 @@ const App = () => {
               <EditorialMarquee direction="left" text="CHÚC MỪNG NGÀY QUỐC TẾ PHỤ NỮ 8/3" />
             </div>
 
-            {/* Giant Background Typography */}
             <div className="absolute top-1/2 left-0 -translate-y-1/2 text-[18vw] md:text-[15vw] font-serif-editorial italic text-stroke-huge pointer-events-none whitespace-nowrap z-0 origin-left opacity-50">
               Mỹ nhân
             </div>
 
             <div className="w-full max-w-4xl relative z-10 mx-auto px-6 md:px-0 flex flex-col justify-center items-start pt-16 pb-16">
-               
                <motion.h1 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -215,8 +236,7 @@ const App = () => {
                      onChange={(e) => setStt(e.target.value)}
                      onKeyPress={(e) => e.key === 'Enter' && handleOpenCard()}
                      placeholder="XX"
-                     maxLength={2}
-                     className="bg-transparent border-b-[3px] border-[var(--color-charcoal)]/30 focus:border-[var(--color-rust)] outline-none text-center transition-colors w-[1.6em] md:w-[1.2em] font-sans-editorial text-[var(--color-rust)] pb-0 md:pb-2 text-[2.2rem] sm:text-[3.5rem] md:text-[5rem] lg:text-[6.2rem] leading-[1]"
+                     className="bg-transparent border-b-[3px] border-[var(--color-charcoal)]/30 focus:border-[var(--color-rust)] outline-none text-center transition-colors w-[2.2em] md:w-[1.6em] font-sans-editorial text-[var(--color-rust)] pb-0 md:pb-2 text-[2.2rem] sm:text-[3.5rem] md:text-[5rem] lg:text-[6.2rem] leading-[1]"
                    />
                  </span>
                  trong <br className="block md:hidden"/>
@@ -240,8 +260,6 @@ const App = () => {
                  transition={{ delay: 0.8, duration: 1 }}
                  className="mt-8 md:mt-8 flex justify-start"
                >
-                 {/* Universal UI UI/UX Button Enter to classic subtle look (both Mobile and PC) */}
-                 {/* Khắc phục text wrap trên Mobile bằng cách tinh chỉnh padding, font-size và flex row. Căn đúng 1 dòng liền mạch */}
                  <button 
                    onClick={handleOpenCard}
                    className="flex text-[9px] sm:text-[10px] md:text-[13px] font-sans-editorial font-medium uppercase tracking-[0.2em] sm:tracking-[0.3em] text-[var(--color-charcoal)]/70 hover:text-[var(--color-rust)] transition-colors items-center gap-2 md:gap-3 group whitespace-nowrap"
@@ -260,7 +278,7 @@ const App = () => {
 
         ) : (
 
-          /* --- FRAME 2: AVANT-GARDE EDITORIAL TỐI THƯỢNG --- */
+          /* --- FRAME 2: AVANT-GARDE EDITORIAL --- */
           <motion.div
             key="frame2"
             initial={{ opacity: 0 }}
@@ -268,54 +286,21 @@ const App = () => {
             className="w-full h-[100dvh] relative overflow-hidden z-10 bg-[var(--color-oatmeal)]"
           >
             
-            {/* ========================================================
-                📱 MOBILE ADVANCED UX (STORY INTERACTION & BOTTOM SHEET)
-                ======================================================== */}
+            {/* 📱 MOBILE ADVANCED UX */}
             <div className="flex md:hidden w-full h-[100dvh] relative overflow-hidden bg-[#1c1a19] text-[#f4f2ee] touch-none">
                 
-                {/* 1. Full Screen Image */}
+                {/* 1. Full Screen Iframe Background */}
                 <div className="absolute inset-0 z-0">
-                   <AnimatePresence mode="sync">
-                     <motion.img 
-                       key={currentImageIndex}
-                       src={selectedGirl?.images?.[currentImageIndex] || selectedGirl?.images?.[0]}
-                       initial={{ opacity: 0, scale: 1.05 }}
-                       animate={{ opacity: 1, scale: 1 }}
-                       exit={{ opacity: 0 }}
-                       transition={{ duration: 1.2, ease: "easeOut" }}
-                       className="absolute inset-0 w-full h-[100dvh] object-cover focus:outline-none"
-                     />
-                   </AnimatePresence>
-                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/20 to-black/95 pointer-events-none" />
+                   <iframe src="/animated.html" className="w-full h-full border-none pointer-events-auto" title="Flowers" />
+                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/95 pointer-events-none" />
                 </div>
 
-                {/* 2. Top Progress (Nút back loại bỏ hoàn toàn như gốc) */}
-                <div className="absolute top-0 w-full px-4 pt-6 z-50 flex flex-col gap-4 pointer-events-auto">
-                   <div className="flex gap-1.5 w-full">
-                     {selectedGirl?.images?.map((_, idx) => (
-                        <div key={idx} className="h-[2px] flex-1 bg-white/40 overflow-hidden rounded-full backdrop-blur-sm relative">
-                           <motion.div 
-                             className="absolute top-0 left-0 h-full bg-white block"
-                             initial={{ width: currentImageIndex > idx ? "100%" : "0%" }}
-                             animate={{ width: currentImageIndex === idx ? "100%" : (currentImageIndex > idx ? "100%" : "0%") }}
-                             transition={{ duration: currentImageIndex === idx ? 5 : 0.3, ease: 'linear' }}
-                           />
-                        </div>
-                     ))}
-                   </div>
-                </div>
-
-                {/* 3. Tap Zones to change image */}
-                <div className="absolute inset-y-20 left-0 w-[40%] z-40" onClick={prevImage} />
-                <div className="absolute inset-y-20 right-0 w-[60%] z-40" onClick={nextImage} />
-
-                {/* 4. Front Overlay Name Typography - Đặt lại ĐÚNG góc Trái Dưới, bố cục trượt thẳng, hạn chế rời rạc */}
-                <div className="absolute bottom-[25%] left-6 z-20 pointer-events-none max-w-[85vw] flex flex-col gap-0 justify-end items-start text-left">
+                {/* 2. Top Name Overlay */}
+                <div className="absolute top-[15%] left-6 z-20 pointer-events-none max-w-[85vw] flex flex-col gap-0 justify-start items-start text-left drop-shadow-xl">
                    {selectedGirl?.name?.split(' ').map((word, i) => {
-                      const baseSize = "text-[3.5rem] leading-[0.8]"; // Size ổn định cho 4 chữ
-                      // Tinh tế bậc thang từ trái sang
+                      const baseSize = "text-[3.5rem] leading-[0.8]"; 
                       let margin = `${i * 1.5}rem`; 
-                      if(i > 3) margin = `${3 * 1.5}rem`; // Giới hạn lề để không tuột khung phải
+                      if(i > 3) margin = `${3 * 1.5}rem`; 
                       return (
                          <motion.h1 
                            key={i} 
@@ -323,7 +308,7 @@ const App = () => {
                            animate={{ opacity: 1, x: 0, y: 0 }}
                            transition={{ delay: 0.6 + (i * 0.15), duration: 0.8 }}
                            style={{ marginLeft: margin }}
-                           className={`font-serif-editorial italic ${baseSize} text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] ${i % 2 === 0 ? 'font-bold' : 'font-light'}`}
+                           className={`font-serif-editorial italic ${baseSize} text-white drop-shadow-[0_4px_16px_rgba(0,0,0,1)] ${i % 2 === 0 ? 'font-bold' : 'font-light'}`}
                          >
                            {word}
                          </motion.h1>
@@ -331,7 +316,7 @@ const App = () => {
                    })}
                 </div>
 
-                {/* 5. Bottom Action Area (Glass Button trigger Bottom Sheet) */}
+                {/* 3. Bottom Action Area (Glass Button trigger Bottom Sheet) */}
                 <div className="absolute bottom-6 w-full px-5 z-[55] flex flex-col items-center pointer-events-none">
                    <button 
                      onClick={() => setQuoteOpen(true)}
@@ -348,7 +333,7 @@ const App = () => {
                    </button>
                 </div>
 
-                {/* 6. 🌟 ADVANCED DRAGGABLE BOTTOM SHEET - WIDER TEXT, QR STYLE 🌟 */}
+                {/* 4. DRAWER SHEET */}
                 <AnimatePresence>
                   {quoteOpen && (
                     <>
@@ -371,44 +356,47 @@ const App = () => {
                         transition={{ type: "spring", damping: 25, stiffness: 220, mass: 0.8 }}
                         className="absolute bottom-0 left-0 w-full h-[65dvh] z-[70] bg-[var(--color-oatmeal)] text-[var(--color-charcoal)] rounded-t-[2.5rem] pt-3 pb-8 px-6 flex flex-col shadow-[0_-20px_50px_rgba(0,0,0,0.5)] touch-none pointer-events-auto border-t border-[var(--color-oatmeal)]"
                       >
-                         {/* Drag Handle */}
                          <div className="w-12 h-1.5 bg-[var(--color-charcoal)]/20 rounded-full mx-auto mb-6 shrink-0" />
                          
-                         <div className="flex items-start justify-between mb-8 overflow-hidden shrink-0">
+                         <div className="flex items-start justify-between mb-8 overflow-hidden shrink-0 pr-2">
                             <div className="flex flex-col gap-1 mt-2">
                                <div className="flex items-center gap-2 text-[var(--color-charcoal)]/50 mb-1">
                                   <QrCode strokeWidth={1.5} size={22} className="text-[var(--color-rust)]" />
                                   <span className="font-sans-editorial text-[10px] uppercase tracking-[0.3em]">Mã định danh</span>
                                </div>
-                               <span className="font-mono text-2xl text-[var(--color-charcoal)] tracking-widest font-medium">
+                               <span className="font-mono text-xl text-[var(--color-charcoal)] tracking-widest font-medium">
                                  #83-{selectedGirl?.stt}
                                </span>
                             </div>
-                            <CircularText text="TÔN VINH VẺ ĐẸP PHỤ NỮ • 8/3/2024 • " />
+                            <AvatarWithCircularText text="TÔN VINH VẺ ĐẸP PHỤ NỮ • 8/3 • " imgSrc={selectedGirl?.imageUrl} />
                          </div>
 
-                         {/* Editorial Quote Block - Mở rộng ngang (w-full) */}
                          <div className="flex-1 w-full mx-auto relative mb-6 overflow-y-auto pr-1 pb-16">
                             <div className="pt-2 pb-6 px-1 h-full flex flex-col justify-start relative">
                                <span className="absolute -top-4 -left-1 text-7xl text-[var(--color-rust)] opacity-20 font-serif-editorial leading-none">"</span>
-                               <p className="font-serif-editorial text-[1.65rem] leading-[1.4] text-[var(--color-charcoal)] relative z-10 text-justify">
-                                 {selectedGirl?.wish || defaultWish}
-                               </p>
+                               <div className="font-serif-editorial relative z-10 text-justify w-full">
+                                  <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                      p: ({node, ...props}) => <p className="text-[1.65rem] leading-[1.4] text-[var(--color-charcoal)] mb-4" {...props} />,
+                                      strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
+                                      em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                                    }}
+                                  >
+                                    {selectedGirl?.wish || defaultWish}
+                                  </ReactMarkdown>
+                               </div>
                             </div>
                          </div>
                       </motion.div>
                     </>
                   )}
                 </AnimatePresence>
-
             </div>
 
-            {/* ========================================================
-                💻 PC EDITORIAL MAGAZINE LAYOUT - CARD OVERLAY STYLING
-                ======================================================== */}
+            {/* 💻 PC EDITORIAL MAGAZINE LAYOUT */}
             <div className="hidden md:flex flex-row w-full h-[100dvh] relative z-10 bg-[var(--color-oatmeal)]">
                
-               {/* Back button */}
                <button 
                  onClick={() => setStep(1)}
                  className="absolute top-12 left-12 z-[60] text-[var(--color-charcoal)] hover:text-[var(--color-rust)] transition-colors p-2 mix-blend-difference"
@@ -416,11 +404,21 @@ const App = () => {
                  <ArrowLeft strokeWidth={1} size={36} />
                </button>
 
-               {/* Left Context Area (40%) */}
-               <div className="w-[40%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-20 mix-blend-multiply">
-                  <div className="flex flex-col items-start justify-center w-full">
+               {/* Left Context Area (45%) */}
+               <div className="w-[45%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-20">
+                  <div className="flex flex-col items-start justify-center w-full relative">
+                    {/* AVATAR + CIRCULAR TEXT */}
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2, duration: 1 }}
+                      className="mb-8 ml-8"
+                    >
+                      <AvatarWithCircularText text="TÔN VINH VẺ ĐẸP PHỤ NỮ • 8/3 • " imgSrc={selectedGirl?.imageUrl} />
+                    </motion.div>
+
+                    {/* NAME */}
                     {selectedGirl?.name?.split(' ').map((word, i) => {
-                       // Tên ở PC sẽ setup xéo xuống (stagger) thay vì dọc 
                        let margin = `${i * 3}rem`; 
                        return (
                          <motion.h1 
@@ -429,7 +427,7 @@ const App = () => {
                            animate={{ x: 0, opacity: 1 }}
                            transition={{ delay: 0.4 + (i * 0.15), duration: 1 }}
                            style={{ marginLeft: margin }}
-                           className={`font-serif-editorial italic text-[5.5rem] lg:text-[7rem] leading-[0.85] tracking-tight text-[var(--color-charcoal)] drop-shadow-sm ${i % 2 === 0 ? 'font-bold' : 'font-light'}`}
+                           className={`font-serif-editorial italic text-[5.5rem] lg:text-[7.5rem] leading-[0.85] tracking-tight text-[var(--color-charcoal)] drop-shadow-sm ${i % 2 === 0 ? 'font-bold' : 'font-light'}`}
                          >
                            {word}
                          </motion.h1>
@@ -438,35 +436,34 @@ const App = () => {
                   </div>
                </div>
 
-               {/* Right Image Area (60%) with Overlay Card */}
-               <div className="w-[60%] h-full relative p-12 pl-0 bg-[var(--color-oatmeal)] flex items-center justify-center">
+               {/* Right Image Area (55%) iframe + Quote */}
+               <div className="w-[55%] h-full relative p-12 pr-12 xl:pr-24 bg-[var(--color-oatmeal)] flex items-center justify-center">
                   
-                  {/* Image Container */}
-                  <div className="w-full h-full relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10">
-                     <AnimatePresence mode="sync">
-                       <motion.img 
-                         key={currentImageIndex}
-                         src={selectedGirl?.images?.[currentImageIndex] || selectedGirl?.images?.[0]}
-                         initial={{ opacity: 0, scale: 1.05 }}
-                         animate={{ opacity: 1, scale: 1 }}
-                         exit={{ opacity: 0 }}
-                         transition={{ duration: 1.2, ease: "easeOut" }}
-                         className="absolute inset-0 w-full h-full object-cover"
-                       />
-                     </AnimatePresence>
+                  <div className="w-full h-full relative shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10 overflow-hidden bg-[#000]">
+                     <iframe src="/animated.html" className="absolute inset-0 w-full h-full border-none pointer-events-auto" title="Flowers" />
+                     {/* Overlay gradient so text remains readable */}
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                   </div>
                   
-                  {/* Overlay Quote Card - Đặt lùi sang TRÁI (âm qua trái -left) tiến về gần tên, tránh cover chính diện khuôn mặt */}
                   <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8, duration: 1 }}
-                    className="absolute -left-[5%] lg:-left-[15%] bottom-[10%] w-[85%] max-w-[700px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-8 lg:p-10 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30"
+                    className="absolute -left-[5%] lg:-left-[15%] bottom-[12%] w-[85%] max-w-[700px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-8 lg:p-10 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30"
                   >
                      <span className="absolute -top-7 -left-3 text-7xl text-[var(--color-rust)] opacity-30 font-serif-editorial leading-none">"</span>
-                     <p className="font-serif-editorial text-[1.6rem] lg:text-[1.95rem] leading-[1.35] text-[var(--color-charcoal)] relative z-10 text-justify">
-                       {selectedGirl?.wish || defaultWish}
-                     </p>
+                     <div className="font-serif-editorial relative z-10 text-justify w-full">
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({node, ...props}) => <p className="text-[1.6rem] lg:text-[1.95rem] leading-[1.35] text-[var(--color-charcoal)] mb-4" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
+                            em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                          }}
+                        >
+                          {selectedGirl?.wish || defaultWish}
+                        </ReactMarkdown>
+                     </div>
                      
                      <div className="mt-8 pt-6 border-t border-[var(--color-charcoal)]/10 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[var(--color-charcoal)]/50">
@@ -478,17 +475,6 @@ const App = () => {
                         </span>
                      </div>
                   </motion.div>
-
-                  {/* Pagination overlay on image */}
-                  <div className="absolute top-16 right-16 z-[60] flex items-center gap-4 mix-blend-difference text-white">
-                    <span className="font-serif-editorial italic text-3xl">
-                      0{currentImageIndex + 1}
-                    </span>
-                    <div className="w-16 h-[1px] bg-white/50" />
-                    <span className="font-sans-editorial text-[11px] uppercase tracking-[0.2em] opacity-80">
-                      0{selectedGirl?.images?.length || 1}
-                    </span>
-                  </div>
                </div>
             </div>
 
@@ -499,4 +485,11 @@ const App = () => {
   );
 };
 
-export default App;
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<CardViewer />} />
+      <Route path="/systemremits" element={<SystemRemits />} />
+    </Routes>
+  );
+}

@@ -148,7 +148,7 @@ const App = () => {
       
       {/* Absolute decorative vertical text */}
       <div className="fixed top-8 right-6 md:top-12 md:left-8 vertical-text text-[10px] md:text-sm font-bold tracking-[0.4em] uppercase text-[var(--color-charcoal)]/30 pointer-events-none z-[100] hidden md:block">
-        PROJECT VENUS // CLASSIFIED ARCHIVES // BY THE GENTLEMEN
+        PROJECT VENUS // KÝ SỰ BÍ MẬT // TỪ NHỮNG QUÝ ÔNG
       </div>
 
       <AnimatePresence mode="wait">

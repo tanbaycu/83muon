@@ -381,6 +381,7 @@ const CardViewer = () => {
                                       p: ({node, ...props}) => <p className="text-[1.65rem] leading-[1.4] text-[var(--color-charcoal)] mb-4" {...props} />,
                                       strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
                                       em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                                      a: ({node, ...props}) => <a className="text-[var(--color-rust)] underline underline-offset-4 decoration-[1.5px] decoration-[var(--color-rust)]/50 hover:decoration-[var(--color-rust)] transition-all pointer-events-auto relative z-50" target="_blank" rel="noopener noreferrer" {...props} />
                                     }}
                                   >
                                     {selectedGirl?.wish || defaultWish}
@@ -466,6 +467,7 @@ const CardViewer = () => {
                             p: ({node, ...props}) => <p className="text-[1.6rem] lg:text-[1.95rem] leading-[1.35] text-[var(--color-charcoal)] mb-4" {...props} />,
                             strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
                             em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                            a: ({node, ...props}) => <a className="text-[var(--color-rust)] underline underline-offset-4 decoration-[1.5px] decoration-[var(--color-rust)]/50 hover:decoration-[var(--color-rust)] transition-all pointer-events-auto relative z-50" target="_blank" rel="noopener noreferrer" {...props} />
                           }}
                         >
                           {selectedGirl?.wish || defaultWish}

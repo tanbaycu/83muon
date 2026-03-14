@@ -148,7 +148,7 @@ const App = () => {
       
       {/* Absolute decorative vertical text */}
       <div className="fixed top-8 right-6 md:top-12 md:left-8 vertical-text text-[10px] md:text-sm font-bold tracking-[0.4em] uppercase text-[var(--color-charcoal)]/30 pointer-events-none z-[100] hidden md:block">
-        Tập San 8.3 // Phiên bản 2024
+        PROJECT VENUS // CLASSIFIED ARCHIVES // BY THE GENTLEMEN
       </div>
 
       <AnimatePresence mode="wait">
@@ -159,7 +159,7 @@ const App = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
             transition={{ duration: 0.8 }}
-            className="w-full h-[100dvh] flex flex-col justify-between z-10 bg-[var(--color-oatmeal)]"
+            className="w-full h-[100dvh] flex flex-col justify-center z-10 bg-[var(--color-oatmeal)] overflow-hidden relative"
           >
             {/* Siêu hiệu ứng Loading Overlay */}
             <AnimatePresence>
@@ -176,9 +176,9 @@ const App = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 1 }}
-                    className="mt-6 font-serif-editorial italic text-2xl md:text-3xl text-[var(--color-charcoal)] flex items-center gap-3 relative z-10 font-bold"
+                    className="mt-6 font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-[var(--color-charcoal)]/80 flex items-center relative z-10 font-bold"
                   >
-                    Đang gói ghém yêu thương <span className="flex gap-1">
+                    DECODING <span className="flex gap-1 ml-2">
                       <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}>.</motion.span>
                       <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}>.</motion.span>
                       <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}>.</motion.span>
@@ -187,15 +187,16 @@ const App = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-            
-            <EditorialMarquee direction="left" text="CHÚC MỪNG NGÀY QUỐC TẾ PHỤ NỮ 8/3" />
+            <div className="absolute top-0 left-0 w-full z-20">
+              <EditorialMarquee direction="left" text="CHÚC MỪNG NGÀY QUỐC TẾ PHỤ NỮ 8/3" />
+            </div>
 
             {/* Giant Background Typography */}
             <div className="absolute top-1/2 left-0 -translate-y-1/2 text-[18vw] md:text-[15vw] font-serif-editorial italic text-stroke-huge pointer-events-none whitespace-nowrap z-0 origin-left opacity-50">
               Mỹ nhân
             </div>
 
-            <div className="w-full max-w-4xl relative z-10 mx-auto px-6 md:px-0 flex-1 flex flex-col justify-center items-start">
+            <div className="w-full max-w-4xl relative z-10 mx-auto px-6 md:px-0 flex flex-col justify-center items-start pt-16 pb-16">
                
                <motion.h1 
                   initial={{ y: 20, opacity: 0 }}
@@ -237,7 +238,7 @@ const App = () => {
                  initial={{ opacity: 0 }}
                  animate={{ opacity: 1 }}
                  transition={{ delay: 0.8, duration: 1 }}
-                 className="mt-12 md:mt-16 flex justify-start"
+                 className="mt-8 md:mt-8 flex justify-start"
                >
                  {/* Universal UI UI/UX Button Enter to classic subtle look (both Mobile and PC) */}
                  {/* Khắc phục text wrap trên Mobile bằng cách tinh chỉnh padding, font-size và flex row. Căn đúng 1 dòng liền mạch */}
@@ -252,7 +253,9 @@ const App = () => {
                </motion.div>
             </div>
 
-            <EditorialMarquee direction="right" text="TÔN VINH VẺ ĐẸP VÀ TRÍ TUỆ CỦA PHỤ NỮ" />
+            <div className="absolute bottom-0 left-0 w-full z-20">
+              <EditorialMarquee direction="right" text="TÔN VINH VẺ ĐẸP VÀ TRÍ TUỆ CỦA PHỤ NỮ" />
+            </div>
           </motion.div>
 
         ) : (

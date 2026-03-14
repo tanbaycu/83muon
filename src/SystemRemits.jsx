@@ -200,25 +200,21 @@ export default function SystemRemits() {
         const imageFile = new File([blob], `avatar_${stt}.jpg`, { type: 'image/jpeg' });
 
         const options = {
-          maxSizeMB: 0.15, // Dưới ~150KB
-          maxWidthOrHeight: 800,
-          useWebWorker: true
+          maxSizeMB: 0.05, // Ép dung lượng dưới 50KB để chuỗi Base64 nhẹ nhất có thể mang vào Firestore < 1MB
+          maxWidthOrHeight: 600,
+          useWebWorker: true,
+          initialQuality: 0.7
         };
 
         const compressedFile = await imageCompression(imageFile, options);
 
-        // Chuyển từ Blob File ngược lại sang base64 data_url cho uploadString
+        // Chuyển từ Blob File ngược lại sang base64 data_url để lưu thẳng vào Database (Bypass Storage)
         finalImageUrl = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.readAsDataURL(compressedFile);
           reader.onloadend = () => resolve(reader.result);
           reader.onerror = error => reject(error);
         });
-
-        setStatusMsg('Đang tải ảnh lên máy chủ (Siêu nhẹ)...');
-        const imageRef = ref(storage, `portraits/${stt}_${Date.now()}.jpg`);
-        await uploadString(imageRef, finalImageUrl, 'data_url');
-        finalImageUrl = await getDownloadURL(imageRef);
       }
 
       setStatusMsg('Đang đóng gói dữ liệu...');

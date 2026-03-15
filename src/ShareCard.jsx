@@ -106,27 +106,6 @@ export default function ShareCard() {
       }, 0);
   };
 
-  // Render Component bìa dùng chung cho 2 cánh cửa để có hiệu ứng Parallax chẻ đôi
-  const renderCoverArt = () => (
-    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-[#1c1a19] to-[#2a2624] text-[#faf8f5] relative overflow-hidden group">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-[#a65d57]/20 rounded-full blur-[80px] pointer-events-none transition-all duration-1000 group-hover:scale-110"></div>
-        
-        {/* Vết cắt giữa bìa */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-transparent via-[#a65d57]/30 to-transparent z-0"></div>
-        
-        <div className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-full border-[4px] md:border-[6px] border-[#a65d57] shadow-[0_20px_40px_rgba(0,0,0,0.5)] overflow-hidden mb-8 transition-transform duration-[2s] group-hover:scale-105">
-            <img src={girlData?.imageUrl} alt={girlData?.name} className="w-full h-full object-cover" />
-        </div>
-        
-        <h1 className="font-serif-editorial text-[2.5rem] md:text-6xl font-bold text-center leading-[1.1] z-10 max-w-[80%] drop-shadow-lg">
-            {girlData?.name}
-        </h1>
-        
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[9px] md:text-xs font-sans-editorial tracking-[0.4em] md:tracking-[0.6em] uppercase text-white/50 whitespace-nowrap z-10">
-            Dự Án Kỷ Yếu • 12A4
-        </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -163,7 +142,7 @@ export default function ShareCard() {
       
       {/* Background Animated iframe & Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-30">
-         <iframe src="/animated.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
+         <iframe src="/animated1.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
          <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/80 to-[#1c1a19]/40" />
       </div>
 
@@ -191,7 +170,7 @@ export default function ShareCard() {
                   </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-lg md:text-xl text-justify text-[#1c1a19]/80 pr-4 relative">
+              <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-base md:text-lg text-justify text-[#1c1a19]/80 pr-4 relative">
                  <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] text-[20rem] leading-none pointer-events-none font-serif-editorial select-none">"</div>
                  
                  <ReactMarkdown 
@@ -241,9 +220,20 @@ export default function ShareCard() {
                    </div>
 
                    {/* Outside Left (Frontface) */}
-                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-l-3xl overflow-hidden shadow-[20px_0_30px_rgba(0,0,0,0.5)] bg-[#1c1a19]">
-                        <div className="absolute top-0 left-0 w-[200%] h-full"> 
-                            {renderCoverArt()} 
+                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-l-3xl overflow-hidden shadow-[20px_0_30px_rgba(0,0,0,0.5)] bg-[#1c1a19] flex flex-col items-center justify-between p-6 md:p-10 border-r border-[#faf8f5]/10">
+                        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#a65d57]/20 border-r border-[#a65d57] to-transparent opacity-50 z-0"></div>
+                        <div className="w-full flex justify-start relative z-10">
+                            <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-white/30 [writing-mode:vertical-rl] rotate-180">
+                                Project Venus • 12A4
+                            </span>
+                        </div>
+                        <div className="flex-1 flex items-center justify-center w-full relative z-10">
+                            <h2 className="font-serif-editorial text-[#faf8f5] text-5xl md:text-7xl italic opacity-90 -rotate-90 whitespace-nowrap drop-shadow-lg">
+                                Vol. 1
+                            </h2>
+                        </div>
+                        <div className="w-full flex justify-end relative z-10">
+                             <div className="w-8 h-[1px] bg-[#a65d57]"></div>
                         </div>
                    </div>
               </div>
@@ -259,9 +249,20 @@ export default function ShareCard() {
                    </div>
 
                    {/* Outside Right (Frontface) */}
-                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-r-3xl overflow-hidden shadow-[-10px_0_20px_rgba(0,0,0,0.3)] bg-[#1c1a19]">
-                        <div className="absolute top-0 left-[-100%] w-[200%] h-full"> 
-                            {renderCoverArt()} 
+                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-r-3xl overflow-hidden shadow-[-10px_0_20px_rgba(0,0,0,0.3)] bg-[#1c1a19] flex flex-col items-center justify-center p-4 md:p-8">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[#a65d57]/10 blur-[60px] rounded-full pointer-events-none z-0"></div>
+                        <div className="relative z-10 w-24 h-24 md:w-36 md:h-36 rounded-full border-[2px] md:border-[3px] border-[#a65d57]/80 shadow-[0_10px_30px_rgba(166,93,87,0.3)] overflow-hidden mb-6 group transition-all duration-700 hover:scale-105">
+                            {girlData?.imageUrl ? (
+                                <img src={girlData.imageUrl} alt={girlData.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            ) : (
+                                <div className="w-full h-full bg-white/5" />
+                            )}
+                        </div>
+                        <h2 className="relative z-10 font-serif-editorial text-2xl md:text-3xl lg:text-4xl text-[#faf8f5] font-bold text-center leading-tight mb-2 drop-shadow-md">
+                            {girlData?.name}
+                        </h2>
+                        <div className="relative z-10 font-sans-editorial text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-[#a65d57] text-center font-bold">
+                            Mã Định Danh: {girlData?.stt}
                         </div>
                    </div>
               </div>

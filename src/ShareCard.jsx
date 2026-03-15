@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, ArrowLeft, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import anime from 'animejs';
+import { Loader2, ArrowLeft, Link as LinkIcon, CheckCircle2, QrCode } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { defaultWish } from './members';
@@ -15,6 +16,7 @@ export default function ShareCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,9 +44,28 @@ export default function ShareCard() {
     fetchData();
   }, [id]);
 
+  const hashCode = useMemo(() => {
+    if(!girlData) return 'A000';
+    let hash = 0;
+    const str = girlData.name + girlData.stt;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash).toString(16).toUpperCase().substring(0, 5);
+  }, [girlData]);
+
+  const shareUrl = window.location.href;
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
+    navigator.clipboard.writeText(shareUrl);
+    setCopied('link');
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleCopyHash = () => {
+    navigator.clipboard.writeText(`83-${girlData?.stt}-${hashCode}`);
+    setCopied('hash');
     setTimeout(() => setCopied(false), 3000);
   };
 
@@ -55,16 +76,64 @@ export default function ShareCard() {
      return textarea.value;
   };
 
+  const handleOpenCard = () => {
+      if (isOpen) return;
+      setIsOpen(true);
+
+      const tl = anime.timeline({
+          easing: 'easeOutExpo',
+          duration: 1500
+      });
+
+      tl.add({
+          targets: '.door-left',
+          rotateY: -130, // Mở cửa trái (Swing Left)
+      })
+      .add({
+          targets: '.door-right',
+          rotateY: 130, // Mở cửa phải (Swing Right)
+      }, 0)
+      .add({
+          targets: '.content-panel',
+          scale: [0.95, 1],
+          opacity: [0.5, 1],
+          boxShadow: ['0px 0px 0px rgba(0,0,0,0)', '0px 30px 60px rgba(0,0,0,0.15)']
+      }, 200)
+      .add({
+          targets: '.tap-hint',
+          opacity: 0,
+          duration: 300
+      }, 0);
+  };
+
+  // Render Component bìa dùng chung cho 2 cánh cửa để có hiệu ứng Parallax chẻ đôi
+  const renderCoverArt = () => (
+    <div className="w-full h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-[#1c1a19] to-[#2a2624] text-[#faf8f5] relative overflow-hidden group">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-[#a65d57]/20 rounded-full blur-[80px] pointer-events-none transition-all duration-1000 group-hover:scale-110"></div>
+        
+        {/* Vết cắt giữa bìa */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-transparent via-[#a65d57]/30 to-transparent z-0"></div>
+        
+        <div className="relative z-10 w-32 h-32 md:w-48 md:h-48 rounded-full border-[4px] md:border-[6px] border-[#a65d57] shadow-[0_20px_40px_rgba(0,0,0,0.5)] overflow-hidden mb-8 transition-transform duration-[2s] group-hover:scale-105">
+            <img src={girlData?.imageUrl} alt={girlData?.name} className="w-full h-full object-cover" />
+        </div>
+        
+        <h1 className="font-serif-editorial text-[2.5rem] md:text-6xl font-bold text-center leading-[1.1] z-10 max-w-[80%] drop-shadow-lg">
+            {girlData?.name}
+        </h1>
+        
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-[9px] md:text-xs font-sans-editorial tracking-[0.4em] md:tracking-[0.6em] uppercase text-white/50 whitespace-nowrap z-10">
+            Dự Án Kỷ Yếu • 12A4
+        </div>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-[#1c1a19] flex flex-col items-center justify-center font-sans-editorial text-[#f4f2ee] select-none">
          <Loader2 className="animate-spin text-[var(--color-rust)] mb-4" size={32} />
-         <motion.div 
-           initial={{ opacity: 0, y: 10 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-white/50 flex items-center font-bold"
-         >
-           LOADING VENUS <span className="flex gap-1 ml-2">
+         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-white/50 flex items-center font-bold">
+           DECODING VENUS ID <span className="flex gap-1 ml-2">
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}>.</motion.span>
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}>.</motion.span>
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}>.</motion.span>
@@ -80,7 +149,7 @@ export default function ShareCard() {
          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center text-red-500 mb-6">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
          </div>
-         <h1 className="text-2xl font-serif-editorial font-bold mb-2">Không tìm thấy Thiệp</h1>
+         <h1 className="text-2xl font-serif-editorial font-bold mb-2">Truy xuất thất bại</h1>
          <p className="text-[#1c1a19]/50 mb-8 max-w-sm">{error}</p>
          <button onClick={() => navigate("/")} className="px-6 py-3 bg-[#1c1a19] text-white text-xs font-bold uppercase tracking-widest rounded-xl hover:bg-[#34302e] transition-colors shadow-lg active:scale-95">
            Trở về Trang chủ
@@ -90,116 +159,127 @@ export default function ShareCard() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative font-sans-editorial bg-[#1c1a19] flex items-center justify-center overflow-x-hidden p-4 md:p-10 lg:p-16">
+    <div className="min-h-[100dvh] w-full relative font-sans-editorial bg-[#1c1a19] flex items-center justify-center overflow-x-hidden p-4 md:p-10 py-20 pb-safe perspective-[2000px]">
       
-      {/* Absolute Backdrop Iframe */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+      {/* Background Animated iframe & Overlay */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-30">
          <iframe src="/animated.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
-         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/80 to-[#1c1a19]/40" />
       </div>
 
       <button 
         onClick={() => navigate("/")}
-        className="fixed top-6 left-6 md:top-10 md:left-10 z-[60] text-white/50 hover:text-white transition-colors p-3 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full shadow-lg border border-white/10"
+        className="fixed top-6 left-6 md:top-10 md:left-10 z-[60] text-white/50 hover:text-[#a65d57] transition-all p-3 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-full shadow-lg border border-white/10 group"
         title="Quay lại danh sách"
       >
-        <ArrowLeft strokeWidth={1.5} size={24} />
+        <ArrowLeft strokeWidth={1.5} size={24} className="group-hover:-translate-x-1 transition-transform" />
       </button>
 
-      {/* Main Glassmorphism Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 30, scale: 0.95 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-2xl relative z-10 bg-[#faf8f5]/98 backdrop-blur-3xl shadow-[0_30px_60px_rgba(0,0,0,0.6)] rounded-[2rem] overflow-hidden flex flex-col md:flex-row border border-white/20"
-      >
-         
-         {/* Top / Left Action Ribbon */}
-         <div className="w-full md:w-32 bg-[#a65d57] shrink-0 flex md:flex-col justify-between items-center p-6 md:py-10 text-white relative overflow-hidden group">
-            <div className="absolute inset-0 bg-black/10 translate-x-full md:translate-x-0 md:translate-y-full group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-700 pointer-events-none rounded-t-[2rem] md:rounded-tr-none md:rounded-l-[2rem]" />
-            
-            <div className="flex flex-col items-start md:items-center relative z-10">
-               <span className="font-sans-editorial text-[10px] md:text-[11px] uppercase tracking-[0.3em] font-bold opacity-70 mb-1 [writing-mode:horizontal-tb] md:[writing-mode:vertical-rl] md:rotate-180 md:tracking-[0.5em] md:mb-6">ID THẺ MỜI</span>
-               <span className="font-mono text-lg md:text-2xl font-bold tracking-widest [writing-mode:horizontal-tb] md:[writing-mode:vertical-rl] md:rotate-180 drop-shadow-sm">#83-{girlData?.stt}</span>
-            </div>
-            
-            <motion.button 
-               whileTap={{ scale: 0.9 }}
-               onClick={handleCopyLink}
-               className="relative z-10 w-12 h-12 rounded-full bg-white/20 hover:bg-white text-white hover:text-[#a65d57] flex items-center justify-center transition-all shadow-md group border border-white/30 backdrop-blur-sm"
-               title="Sao chép Link"
-            >
-               {copied ? <CheckCircle2 size={20} strokeWidth={2.5} /> : <LinkIcon size={18} strokeWidth={2} />}
-            </motion.button>
-         </div>
-
-         {/* Content Area */}
-         <div className="flex-1 p-8 md:p-12 pb-10 flex flex-col relative min-h-[500px]">
-            {/* Watermark Quote */}
-            <span className="absolute top-2 right-6 md:right-8 text-[8rem] md:text-[12rem] text-[#1c1a19] opacity-[0.03] font-serif-editorial leading-none pointer-events-none select-none">"</span>
-
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-8 relative z-10">
-               <div className="w-28 h-28 md:w-32 md:h-32 rounded-full overflow-hidden border-[4px] border-white shadow-xl shrink-0 bg-[#1c1a19]/5 hidden sm:block">
-                 {girlData?.imageUrl ? (
-                    <img src={girlData.imageUrl} alt={girlData.name} className="w-full h-full object-cover" />
-                 ) : (
-                    <div className="w-full h-full bg-[#1c1a19]/10" />
-                 )}
-               </div>
-               
-               <div className="flex flex-col items-center sm:items-start text-center sm:text-left pt-2">
-                 <div className="w-20 h-20 sm:hidden rounded-full overflow-hidden border-[3px] border-white shadow-lg mb-4 bg-[#1c1a19]/5 shrink-0">
-                    {girlData?.imageUrl ? (
-                       <img src={girlData.imageUrl} alt={girlData.name} className="w-full h-full object-cover" />
-                    ) : (
-                       <div className="w-full h-full bg-[#1c1a19]/10" />
-                    )}
-                 </div>
-                 <h2 className="font-serif-editorial text-[2.5rem] md:text-[3.5rem] leading-[1] italic font-bold text-[#1c1a19] drop-shadow-sm mb-1">{girlData?.name}</h2>
-                 <p className="font-sans-editorial text-[10px] md:text-[11px] uppercase tracking-[0.2em] font-semibold text-[#a65d57]">Gương mặt / Đại diện Sắc đẹp</p>
-               </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar relative z-10 mb-4">
-               <div className="font-serif-editorial text-justify w-full">
-                  <ReactMarkdown 
+      {/* GATEFOLD CARD CONTAINER */}
+      <div className="card-container w-[90vw] md:w-[600px] h-[75vh] md:h-[600px] max-h-[800px] relative z-10 [perspective:2000px] mx-auto mt-0 lg:mt-4 shadow-2xl">
+          
+          {/* MẶT TRONG THIỆP (Nội dung) */}
+          <div className="content-panel absolute inset-0 bg-[#faf8f5] rounded-3xl flex flex-col p-6 md:p-10 opacity-60 scale-95 border border-[#1c1a19]/10 [transform-style:preserve-3d]">
+              <div className="w-full border-b border-[var(--color-rust)]/20 pb-4 mb-6 flex justify-between items-end relative z-10">
+                  <div>
+                     <span className="font-sans-editorial text-[9px] uppercase tracking-[0.2em] font-bold text-[#a65d57]">Gửi tới</span>
+                     <h2 className="font-serif-editorial text-[1.8rem] md:text-4xl font-bold text-[#1c1a19] leading-none mt-1">{girlData?.name}</h2>
+                  </div>
+                  <div className="font-mono text-[10px] md:text-sm text-[#1c1a19]/40 tracking-widest text-right">
+                     ID: {girlData?.stt}<br/>
+                     <span className="opacity-50 text-[8px] md:text-[10px]">VERIFIED CA</span>
+                  </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-lg md:text-xl text-justify text-[#1c1a19]/80 pr-4 relative">
+                 <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] text-[20rem] leading-none pointer-events-none font-serif-editorial select-none">"</div>
+                 
+                 <ReactMarkdown 
                      remarkPlugins={[remarkGfm]}
                      components={{
-                       p: ({node, ...props}) => <p className="text-[1.3rem] md:text-[1.5rem] leading-[1.6] text-[#1c1a19]/90 mb-5" {...props} />,
+                       p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
                        strong: ({node, ...props}) => <strong className="font-bold text-[#a65d57]" {...props} />,
                        em: ({node, ...props}) => <em className="italic font-light" {...props} />,
-                       a: ({node, ...props}) => <a className="text-[#a65d57] underline underline-offset-4 decoration-1 hover:decoration-[#a65d57] opacity-90 transition-all font-medium" target="_blank" rel="noopener noreferrer" {...props} />
                      }}
-                  >
+                 >
                      {decodeHtmlEntities(girlData?.wish) || defaultWish}
-                  </ReactMarkdown>
-               </div>
-            </div>
+                 </ReactMarkdown>
 
-            <div className="mt-auto pt-6 border-t border-[#1c1a19]/10 flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 relative z-10">
-               <span className="font-sans-editorial text-[10px] uppercase tracking-[0.3em] font-bold text-[#1c1a19]/30 hidden sm:block pt-3">DỰ ÁN VENUS • 12A4</span>
-               {girlData?.signature && (
-                  <div className="text-center sm:text-right w-full sm:w-auto">
-                     <span className="font-serif-editorial italic text-2xl md:text-[1.8rem] font-bold text-[#a65d57] inline-block">
-                        — {girlData.signature}
-                     </span>
-                  </div>
-               )}
-            </div>
+                 <div className="mt-8 text-right italic font-bold text-[#a65d57] text-xl md:text-2xl pb-4">
+                     — {girlData?.signature || 'Project Venus'}
+                 </div>
+              </div>
+          </div>
 
-         </div>
-      </motion.div>
-      
-      {copied && (
-         <motion.div 
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           exit={{ opacity: 0, scale: 0.9 }}
-           className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-white text-[#1c1a19] px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest shadow-2xl flex items-center gap-2 border border-[#1c1a19]/5"
-         >
-           <CheckCircle2 size={16} className="text-green-600" /> Đã chép Link Thiệp!
-         </motion.div>
-      )}
+          {/* 2 CÁNH CỬA (Doors) */}
+          <div className="absolute inset-0 flex [transform-style:preserve-3d] shadow-2xl rounded-3xl pointer-events-none">
+              
+              {/* Tap Hint */}
+              <div className="tap-hint absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+                 <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full animate-fadeIn mt-64 shadow-lg">
+                    <span className="font-sans-editorial text-xs tracking-[0.3em] font-bold text-white uppercase drop-shadow">Tap to Open</span>
+                 </div>
+              </div>
+
+              {/* LEFT DOOR */}
+              <div className="door-left relative w-1/2 h-full origin-left [transform-style:preserve-3d] z-20 cursor-pointer pointer-events-auto" onClick={handleOpenCard}>
+                   
+                   {/* Inside Left (Backface) */}
+                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] rounded-l-3xl border-y border-l border-white/10 p-4 md:p-8 flex flex-col items-center justify-between text-white drop-shadow-2xl">
+                       <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-widest text-[#a65d57] uppercase">Venus Intl</span>
+                       <div className="flex flex-col items-center w-full">
+                           <div className="text-white/40 italic font-serif-editorial text-lg md:text-xl mb-4 text-center">Scan to Capture</div>
+                           <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-500">
+                               {/* Dynamic QuickChart.io QR generation */}
+                               <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-20 h-20 md:w-32 md:h-32 object-contain" />
+                           </div>
+                           <span className="font-mono text-[9px] md:text-[11px] text-white/30 tracking-[0.3em] uppercase mt-6 text-center">
+                              #{hashCode}
+                           </span>
+                       </div>
+                       <QrCode size={16} className="text-white/10" />
+                   </div>
+
+                   {/* Outside Left (Frontface) */}
+                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-l-3xl overflow-hidden shadow-[20px_0_30px_rgba(0,0,0,0.5)] bg-[#1c1a19]">
+                        <div className="absolute top-0 left-0 w-[200%] h-full"> 
+                            {renderCoverArt()} 
+                        </div>
+                   </div>
+              </div>
+
+              {/* RIGHT DOOR */}
+              <div className="door-right relative w-1/2 h-full origin-right [transform-style:preserve-3d] z-20 cursor-pointer pointer-events-auto border-l-0" onClick={handleOpenCard}>
+                   
+                   {/* Inside Right (Backface) */}
+                   <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-tr from-[#1c1a19] to-[#2a2624] rounded-r-3xl border-y border-r border-white/10 p-6 flex flex-col justify-end text-right drop-shadow-2xl overflow-hidden">
+                       <div className="opacity-[0.02] text-[15rem] font-serif-editorial absolute bottom-[-5rem] right-[-2rem] leading-none pointer-events-none">V</div>
+                       <h3 className="font-serif-editorial text-[#a65d57] text-2xl md:text-4xl italic">Project Venus</h3>
+                       <p className="font-sans-editorial text-[9px] md:text-[11px] text-white/40 tracking-[0.3em] mt-2 uppercase">Volume 1.0<br/>Class of 12A4</p>
+                   </div>
+
+                   {/* Outside Right (Frontface) */}
+                   <div className="absolute inset-0 [backface-visibility:hidden] rounded-r-3xl overflow-hidden shadow-[-10px_0_20px_rgba(0,0,0,0.3)] bg-[#1c1a19]">
+                        <div className="absolute top-0 left-[-100%] w-[200%] h-full"> 
+                            {renderCoverArt()} 
+                        </div>
+                   </div>
+              </div>
+
+          </div>
+      </div>
+
+      {/* Floating Action Bar (Appears when opened) */}
+      <div className={`fixed bottom-6 md:bottom-10 left-0 w-full flex flex-wrap justify-center gap-3 md:gap-6 z-50 transition-all duration-1000 px-4 ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0 pointer-events-none'}`}>
+         <button onClick={handleCopyLink} className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-[#1c1a19]/80 backdrop-blur-xl text-white rounded-full px-6 py-4 font-sans-editorial uppercase tracking-widest text-[9px] md:text-[11px] font-bold shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:bg-[#a65d57] transition-all border border-white/20 active:scale-95">
+             {copied === 'link' ? <CheckCircle2 size={16} className="text-green-400" /> : <LinkIcon size={16} />}
+             {copied === 'link' ? 'Đã sao chép' : 'Sao chép Link'}
+         </button>
+         <button onClick={handleCopyHash} className="flex flex-1 md:flex-none items-center justify-center gap-2 bg-white/10 backdrop-blur-xl text-white rounded-full px-6 py-4 font-sans-editorial uppercase tracking-widest text-[9px] md:text-[11px] font-bold shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:bg-white/20 transition-all border border-white/20 active:scale-95">
+             {copied === 'hash' ? <CheckCircle2 size={16} className="text-green-400" /> : <span className="font-mono pt-[1px] opacity-70">#</span>}
+             {copied === 'hash' ? 'Đã sao chép' : 'Copy Mã Hash'}
+         </button>
+      </div>
 
     </div>
   );

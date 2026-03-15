@@ -117,7 +117,7 @@ export default function ShareCard() {
     if (navigator.share) {
         try {
             await navigator.share({
-                title: 'Project Venus - Bức thư tuyệt mật',
+                title: 'Kỷ Niệm 12A4 - Bức thư tuyệt mật',
                 text: `Bạn nhận được một thông điệp từ ID #83-${girlData?.stt}`,
                 url: shareUrl,
             });
@@ -200,7 +200,7 @@ export default function ShareCard() {
       <div className="fixed inset-0 bg-[#faf8f5] flex flex-col items-center justify-center font-sans-editorial select-none">
          <LoadingSVG />
          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} delay={0.5} className="font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-[#1c1a19]/80 flex items-center font-bold mt-6">
-           DECODING VENUS ID <span className="flex gap-1 ml-2">
+           DECODING MEMORY ID <span className="flex gap-1 ml-2">
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}>.</motion.span>
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}>.</motion.span>
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }}>.</motion.span>
@@ -231,7 +231,7 @@ export default function ShareCard() {
       {/* Background Animated iframe & Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-100">
          <iframe src="/animated1.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
-         <div className="absolute inset-0 bg-[#1c1a19]/50 backdrop-blur-[2px]"></div>
+         <div className="absolute inset-0 bg-[#1c1a19]/80 backdrop-blur-[4px]"></div>
          <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/40 to-[#1c1a19]/10" />
       </div>
 
@@ -300,18 +300,18 @@ export default function ShareCard() {
                 </ReactMarkdown>
 
                 <div className="mt-8 text-right italic font-bold text-[#a65d57] text-xl pb-4">
-                    — {girlData?.signature || 'Project Venus'}
+                    — {girlData?.signature || 'Thanh Xuân 12A4'}
                 </div>
              </div>
           </div>
 
           {/* Card 3: QR Code (Inside Left Equivalent) */}
           <div className="snap-center shrink-0 w-[85vw] max-w-[350px] h-[70vh] max-h-[550px] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] rounded-3xl p-6 border border-white/5 shadow-2xl flex flex-col items-center justify-between text-white relative">
-             <span className="font-sans-editorial text-[10px] tracking-widest text-[#a65d57] uppercase">Venus Intl</span>
+             <span className="font-sans-editorial text-[10px] tracking-widest text-[#a65d57] uppercase">Kỷ Niệm 12A4</span>
              <div className="flex flex-col items-center justify-center w-full flex-1">
                  <div className="text-white/40 italic font-serif-editorial text-lg mb-6 text-center">Scan to Capture</div>
-                 <div className="bg-white p-3 rounded-2xl shadow-xl">
-                     <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-32 h-32 object-contain" />
+                 <div className="bg-white p-4 rounded-3xl shadow-xl">
+                     <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-40 h-40 object-contain" />
                  </div>
                  <span className="font-mono text-[11px] text-white/30 tracking-[0.3em] uppercase mt-8 text-center">
                      #{hashCode}
@@ -368,16 +368,16 @@ export default function ShareCard() {
                   {/* 2 CÁNH CỬA (Doors) */}
                   <div className="absolute inset-0 flex [transform-style:preserve-3d] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-3xl pointer-events-none">
                       
-                      {/* LEFT DOOR */}
+                       {/* LEFT DOOR */}
                       <div className="door-left relative w-1/2 h-full origin-left [transform-style:preserve-3d] z-20 cursor-pointer pointer-events-auto" onClick={handleToggleCard}>
                            
                            {/* Inside Left (Backface) */}
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] rounded-l-3xl border-y border-l border-white/10 p-4 md:p-8 flex flex-col items-center justify-between text-white drop-shadow-2xl">
-                               <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-widest text-[#a65d57] uppercase">Venus Intl</span>
+                               <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-widest text-[#a65d57] uppercase">Hồi Ức 12A4</span>
                                <div className="flex flex-col items-center w-full">
                                    <div className="text-white/40 italic font-serif-editorial text-base md:text-xl mb-4 text-center">Scan to Capture</div>
-                                   <div className="bg-white p-2 md:p-3 rounded-2xl shadow-xl hover:scale-105 transition-transform duration-500">
-                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-20 h-20 lg:w-32 lg:h-32 object-contain" />
+                                   <div className="bg-white p-3 md:p-4 rounded-3xl shadow-xl hover:scale-105 transition-transform duration-500">
+                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-32 h-32 lg:w-48 lg:h-48 object-contain" />
                                    </div>
                                    <span className="font-mono text-[9px] md:text-[11px] text-white/30 tracking-[0.3em] uppercase mt-6 text-center">
                                        #{hashCode}
@@ -391,7 +391,7 @@ export default function ShareCard() {
                                 <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#a65d57]/10 via-transparent to-transparent z-0 pointer-events-none" />
                                 <div className="w-full flex justify-start relative z-10">
                                     <span className="font-sans-editorial text-[7px] sm:text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-[#faf8f5]/40 [writing-mode:vertical-rl] rotate-180">
-                                        Project Venus • 12A4
+                                        Kỷ Niệm • 12A4
                                     </span>
                                 </div>
                                 <div className="flex-1 flex items-center justify-center w-full relative z-10 pt-10">
@@ -410,9 +410,9 @@ export default function ShareCard() {
                            
                            {/* Inside Right (Backface) */}
                            <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-tr from-[#1c1a19] to-[#2a2624] rounded-r-3xl border-y border-r border-white/10 p-4 md:p-6 flex flex-col justify-end text-right drop-shadow-2xl overflow-hidden">
-                               <div className="opacity-[0.02] text-[10rem] md:text-[15rem] font-serif-editorial absolute bottom-[-3rem] md:bottom-[-5rem] right-[-1rem] md:right-[-2rem] leading-none pointer-events-none">V</div>
-                               <h3 className="font-serif-editorial text-[#a65d57] text-xl md:text-3xl lg:text-4xl italic">Project Venus</h3>
-                               <p className="font-sans-editorial text-[7px] md:text-[9px] lg:text-[11px] text-white/40 tracking-[0.3em] mt-2 uppercase">Volume 1.0<br/>Class of 12A4</p>
+                               <div className="opacity-[0.02] text-[10rem] md:text-[15rem] font-serif-editorial absolute bottom-[-3rem] md:bottom-[-5rem] right-[-1rem] md:right-[-2rem] leading-none pointer-events-none">12A4</div>
+                               <h3 className="font-serif-editorial text-[#a65d57] text-xl md:text-3xl lg:text-4xl italic">Thanh Xuân 12A4</h3>
+                               <p className="font-sans-editorial text-[7px] md:text-[9px] lg:text-[11px] text-white/40 tracking-[0.3em] mt-2 uppercase">Góc Kỷ Niệm<br/>Class of 12A4</p>
                            </div>
 
                            {/* Outside Right (Frontface) */}

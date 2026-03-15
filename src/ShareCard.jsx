@@ -9,6 +9,56 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { defaultWish } from './members';
 
+// --- COMPONENT: Messy Path Drawing Loading ---
+const LoadingSVG = () => {
+  const [svgContent, setSvgContent] = useState('');
+  const svgRef = useRef(null);
+
+  useEffect(() => {
+    fetch('/loadingv1.svg')
+      .then(res => res.text())
+      .then(text => setSvgContent(text))
+      .catch(err => console.error('Error fetching SVG:', err));
+  }, []);
+
+  useEffect(() => {
+    if (svgContent && svgRef.current) {
+      const paths = svgRef.current.querySelectorAll('path');
+      paths.forEach(p => {
+        p.setAttribute('stroke', '#000000'); 
+        p.setAttribute('stroke-width', '8'); 
+        p.setAttribute('fill', 'transparent'); 
+        p.setAttribute('stroke-linecap', 'round');
+        p.setAttribute('stroke-linejoin', 'round');
+      });
+      
+      anime.timeline()
+        .add({
+          targets: paths,
+          strokeDashoffset: [anime.setDashoffset, 0],
+          easing: 'easeInOutSine',
+          duration: 4500,
+          delay: function(el, i) { return i * 150 },
+        })
+        .add({
+          targets: paths,
+          fill: ['transparent', '#000000'],
+          strokeWidth: ['8', '1.5'],
+          duration: 1000,
+          easing: 'easeInQuad'
+        }, '-=800'); 
+    }
+  }, [svgContent]);
+
+  return (
+    <div 
+      ref={svgRef} 
+      className="w-[200px] h-[200px] md:w-[300px] md:h-[300px] opacity-90 drop-shadow-md flex items-center justify-center pointer-events-none" 
+      dangerouslySetInnerHTML={{ __html: svgContent }} 
+    />
+  );
+};
+
 export default function ShareCard() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -109,9 +159,9 @@ export default function ShareCard() {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-[#1c1a19] flex flex-col items-center justify-center font-sans-editorial text-[#f4f2ee] select-none">
-         <Loader2 className="animate-spin text-[var(--color-rust)] mb-4" size={32} />
-         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-white/50 flex items-center font-bold">
+      <div className="fixed inset-0 bg-[#faf8f5] flex flex-col items-center justify-center font-sans-editorial select-none">
+         <LoadingSVG />
+         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} delay={0.5} className="font-sans-editorial uppercase tracking-[0.4em] text-[10px] md:text-sm text-[#1c1a19]/80 flex items-center font-bold mt-6">
            DECODING VENUS ID <span className="flex gap-1 ml-2">
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0 }}>.</motion.span>
               <motion.span animate={{ opacity: [0,1,0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }}>.</motion.span>
@@ -141,9 +191,9 @@ export default function ShareCard() {
     <div className="min-h-[100dvh] w-full relative font-sans-editorial bg-[#1c1a19] flex items-center justify-center overflow-x-hidden p-4 md:p-10 py-20 pb-safe perspective-[2000px]">
       
       {/* Background Animated iframe & Overlay */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-30">
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-80">
          <iframe src="/animated1.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
-         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/80 to-[#1c1a19]/40" />
+         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/40 to-[#1c1a19]/10" />
       </div>
 
       <button 
@@ -193,12 +243,7 @@ export default function ShareCard() {
           {/* 2 CÁNH CỬA (Doors) */}
           <div className="absolute inset-0 flex [transform-style:preserve-3d] shadow-2xl rounded-3xl pointer-events-none">
               
-              {/* Tap Hint */}
-              <div className="tap-hint absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-                 <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-2 rounded-full animate-fadeIn mt-64 shadow-lg">
-                    <span className="font-sans-editorial text-xs tracking-[0.3em] font-bold text-white uppercase drop-shadow">Tap to Open</span>
-                 </div>
-              </div>
+
 
               {/* LEFT DOOR */}
               <div className="door-left relative w-1/2 h-full origin-left [transform-style:preserve-3d] z-20 cursor-pointer pointer-events-auto" onClick={handleOpenCard}>
@@ -223,13 +268,14 @@ export default function ShareCard() {
                    <div className="absolute inset-0 [backface-visibility:hidden] rounded-l-3xl overflow-hidden shadow-[20px_0_30px_rgba(0,0,0,0.5)] bg-[#1c1a19] flex flex-col items-center justify-between p-6 md:p-10 border-r border-[#faf8f5]/10">
                         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#a65d57]/20 border-r border-[#a65d57] to-transparent opacity-50 z-0"></div>
                         <div className="w-full flex justify-start relative z-10">
-                            <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-white/30 [writing-mode:vertical-rl] rotate-180">
+                            <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-[#faf8f5]/40 [writing-mode:vertical-rl] rotate-180">
                                 Project Venus • 12A4
                             </span>
                         </div>
                         <div className="flex-1 flex items-center justify-center w-full relative z-10">
                             <h2 className="font-serif-editorial text-[#faf8f5] text-5xl md:text-7xl italic opacity-90 -rotate-90 whitespace-nowrap drop-shadow-lg">
-                                Vol. 1
+                                {/* Format ID as Vol. X like user requested */}
+                                Vol. {id.length === 1 ? `0${id}` : id}
                             </h2>
                         </div>
                         <div className="w-full flex justify-end relative z-10">

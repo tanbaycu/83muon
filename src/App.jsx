@@ -457,14 +457,14 @@ const CardViewer = () => {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8, duration: 1 }}
-                    className="absolute -left-[5%] lg:-left-[15%] bottom-[12%] w-[85%] max-w-[700px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-8 lg:p-10 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30"
+                    className="absolute -left-[10%] lg:-left-[25%] bottom-[8%] w-[95%] max-w-[850px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-10 lg:p-14 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30"
                   >
                      <span className="absolute -top-7 -left-3 text-7xl text-[var(--color-rust)] opacity-30 font-serif-editorial leading-none">"</span>
                      <div className="font-serif-editorial relative z-10 text-justify w-full">
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            p: ({node, ...props}) => <p className="text-[1.6rem] lg:text-[1.95rem] leading-[1.35] text-[var(--color-charcoal)] mb-4" {...props} />,
+                            p: ({node, ...props}) => <p className="text-[1.8rem] lg:text-[2.2rem] leading-[1.4] text-[var(--color-charcoal)] mb-5" {...props} />,
                             strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
                             em: ({node, ...props}) => <em className="italic font-light" {...props} />,
                             a: ({node, ...props}) => <a className="text-[var(--color-rust)] underline underline-offset-4 decoration-[1.5px] decoration-[var(--color-rust)]/50 hover:decoration-[var(--color-rust)] transition-all pointer-events-auto relative z-50" target="_blank" rel="noopener noreferrer" {...props} />
@@ -475,8 +475,8 @@ const CardViewer = () => {
                      </div>
                      
                      {selectedGirl?.signature && (
-                        <div className="w-full text-right mt-8">
-                           <span className="font-serif-editorial italic text-2xl lg:text-3xl font-bold text-[var(--color-rust)]/80 inline-block mr-4">
+                        <div className="w-full text-right mt-10">
+                           <span className="font-serif-editorial italic text-3xl lg:text-4xl font-bold text-[var(--color-rust)]/80 inline-block mr-6">
                               — {selectedGirl.signature}
                            </span>
                         </div>
@@ -487,8 +487,8 @@ const CardViewer = () => {
                           <QrCode strokeWidth={1.5} size={18} className="text-[var(--color-rust)]" />
                           <span className="font-sans-editorial text-[10px] uppercase tracking-[0.2em]">ID: #83-{selectedGirl?.stt}</span>
                         </div>
-                        <span className="font-sans-editorial text-[10px] uppercase tracking-[0.2em] font-bold text-[var(--color-rust)]">
-                           2024
+                        <span className="font-sans-editorial text-[11px] lg:text-[13px] uppercase tracking-[0.25em] font-bold text-[var(--color-rust)]">
+                           12A4
                         </span>
                      </div>
                   </motion.div>

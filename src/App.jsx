@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import anime from 'animejs';
 import { ArrowLeft, ChevronUp, QrCode } from 'lucide-react';
-import { Routes, Route, useSearchParams } from 'react-router-dom';
+import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import SystemRemits from './SystemRemits';
 import { defaultWish } from './members'; 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import ShareCard from './ShareCard';
 
 // --- COMPONENT: Circular Text SVG + Avatar ---
 const AvatarWithCircularText = ({ text, imgSrc }) => {
@@ -107,6 +108,7 @@ const CardViewer = () => {
   const [quoteOpen, setQuoteOpen] = useState(false); 
   const inputRef = useRef(null);
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Load preview directly if preview_id is in URL or local preview
   useEffect(() => {
@@ -364,9 +366,13 @@ const CardViewer = () => {
                                   <QrCode strokeWidth={1.5} size={22} className="text-[var(--color-rust)]" />
                                   <span className="font-sans-editorial text-[10px] uppercase tracking-[0.3em]">Mã định danh</span>
                                </div>
-                               <span className="font-mono text-xl text-[var(--color-charcoal)] tracking-widest font-medium">
+                               <button 
+                                  onClick={() => navigate(`/share/${selectedGirl?.stt}`)}
+                                  className="font-mono text-xl text-[var(--color-charcoal)] tracking-widest font-medium text-left hover:text-[var(--color-rust)] transition-colors"
+                                  title="Chia sẻ thiệp này"
+                               >
                                  #83-{selectedGirl?.stt}
-                               </span>
+                               </button>
                             </div>
                             <AvatarWithCircularText text="TÔN VINH VẺ ĐẸP PHỤ NỮ • 8/3 • " imgSrc={selectedGirl?.imageUrl} />
                          </div>
@@ -483,10 +489,14 @@ const CardViewer = () => {
                      )}
                      
                      <div className="mt-8 pt-6 border-t border-[var(--color-charcoal)]/10 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[var(--color-charcoal)]/50">
-                          <QrCode strokeWidth={1.5} size={18} className="text-[var(--color-rust)]" />
+                        <button 
+                          onClick={() => window.open(`/#/share/${selectedGirl?.stt}`, '_blank')}
+                          className="flex items-center gap-2 text-[var(--color-charcoal)]/50 hover:text-[var(--color-rust)] transition-colors group cursor-pointer"
+                          title="Chia sẻ thiệp này"
+                        >
+                          <QrCode strokeWidth={1.5} size={18} className="text-[var(--color-rust)] group-hover:scale-110 transition-transform" />
                           <span className="font-sans-editorial text-[10px] uppercase tracking-[0.2em]">ID: #83-{selectedGirl?.stt}</span>
-                        </div>
+                        </button>
                         <span className="font-sans-editorial text-[11px] lg:text-[13px] uppercase tracking-[0.25em] font-bold text-[var(--color-rust)]">
                            12A4
                         </span>
@@ -507,6 +517,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<CardViewer />} />
       <Route path="/systemremits" element={<SystemRemits />} />
+      <Route path="/share/:id" element={<ShareCard />} />
     </Routes>
   );
 }

@@ -67,6 +67,7 @@ export default function ShareCard() {
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [activeMobileCard, setActiveMobileCard] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -231,8 +232,8 @@ export default function ShareCard() {
       {/* Background Animated iframe & Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-100">
          <iframe src="/animated1.html" className="w-full h-full border-none object-cover scale-[1.2]" title="Flowers Background" />
-         <div className="absolute inset-0 bg-[#1c1a19]/80 backdrop-blur-[4px]"></div>
-         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-[#1c1a19]/40 to-[#1c1a19]/10" />
+         <div className="absolute inset-0 bg-[#1c1a19]/50 backdrop-blur-[1px]"></div>
+         <div className="absolute inset-0 bg-gradient-to-t from-[#1c1a19] via-transparent to-transparent pointer-events-none" />
       </div>
 
       {isOpen && (
@@ -241,91 +242,109 @@ export default function ShareCard() {
 
       <button 
         onClick={() => navigate("/")}
-        className="fixed top-6 left-6 md:top-10 md:left-10 z-[60] text-white/50 hover:text-[#a65d57] transition-all p-3 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-full shadow-lg border border-white/10 group"
+        className="hidden md:flex fixed top-6 left-6 md:top-10 md:left-10 z-[60] text-white/50 hover:text-[#a65d57] transition-all p-3 bg-white/5 hover:bg-white/10 backdrop-blur-md rounded-full shadow-lg border border-white/10 group"
         title="Quay lại danh sách"
       >
         <ArrowLeft strokeWidth={1.5} size={24} className="group-hover:-translate-x-1 transition-transform" />
       </button>
 
       {/* -------------- MOBILE LAYOUT: 3 SWIPEABLE CARDS -------------- */}
-      <div className="md:hidden relative z-10 w-full h-full flex flex-row items-center overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-6 px-[7.5vw] pt-12 pb-28">
+      <div className="md:hidden relative z-10 w-full h-[100dvh] flex flex-col pt-4 pb-32">
           
-          {/* Card 1: Avatar (Frontface Equivalent) */}
-          <div className="snap-center shrink-0 w-[85vw] max-w-[350px] h-[70vh] max-h-[550px] bg-[#1c1a19] rounded-3xl p-6 border border-white/5 shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
-             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[#a65d57]/10 blur-[50px] rounded-full pointer-events-none z-0" />
-             <div className="relative z-10 w-36 h-36 rounded-full border-[1.5px] border-[#a65d57]/40 shadow-[0_0_40px_rgba(166,93,87,0.2)] overflow-hidden mb-6 ring-4 ring-[#1c1a19]">
-                 {girlData?.imageUrl ? (
-                     <img src={girlData.imageUrl} alt={girlData.name} className="w-full h-full object-cover" />
-                 ) : (
-                     <div className="w-full h-full bg-white/5" />
-                 )}
-             </div>
-             <h2 className="relative z-10 font-serif-editorial text-4xl text-[#faf8f5] font-bold text-center leading-tight mb-2">
-                 {girlData?.name}
-             </h2>
-             <div className="relative z-10 font-sans-editorial text-[10px] tracking-[0.4em] uppercase text-[#a65d57] text-center font-bold">
-                 ID: {girlData?.stt}
-             </div>
-             
-             <div className="absolute bottom-6 left-0 w-full flex justify-center animate-[pulse_2s_ease-in-out_infinite] gap-2 opacity-40 text-[9px] tracking-widest text-white mt-10 uppercase items-center font-sans-editorial font-bold">
-                 <span>Vuốt Xem Lời Chúc</span> 
-                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-             </div>
+          <div 
+            className="flex-1 w-full flex flex-row items-center overflow-x-auto snap-x snap-mandatory hide-scrollbar px-[5vw] -translate-y-8"
+            onScroll={(e) => {
+               const scrollLeft = e.target.scrollLeft;
+               const width = window.innerWidth * 0.9;
+               const index = Math.round(scrollLeft / width);
+               if (index !== activeMobileCard) setActiveMobileCard(index);
+            }}
+          >
+              <div className="flex gap-4 items-center pl-[5vw] pr-[5vw]">
+                  
+                  {/* Card 1: Avatar */}
+                  <div className="snap-center shrink-0 w-[90vw] h-[75vh] max-h-[600px] bg-gradient-to-br from-[#2a2624] to-[#1c1a19] rounded-3xl p-6 border border-[#a65d57]/20 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center relative overflow-hidden">
+                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] h-[150%] bg-[#a65d57]/10 blur-[50px] rounded-full pointer-events-none z-0" />
+                     <div className="relative z-10 w-32 h-32 rounded-full border-[2px] border-[#a65d57]/60 shadow-[0_0_40px_rgba(166,93,87,0.3)] overflow-hidden mb-6 ring-4 ring-[#1c1a19]">
+                         {girlData?.imageUrl ? (
+                             <img src={girlData.imageUrl} alt={girlData.name} className="w-full h-full object-cover" />
+                         ) : (
+                             <div className="w-full h-full bg-white/5" />
+                         )}
+                     </div>
+                     <h2 className="relative z-10 font-serif-editorial text-3xl text-[#faf8f5] font-bold text-center leading-tight mb-2">
+                         {girlData?.name}
+                     </h2>
+                     <div className="relative z-10 font-sans-editorial text-[10px] tracking-[0.4em] uppercase text-[#a65d57] text-center font-bold">
+                         ID: {girlData?.stt}
+                     </div>
+                  </div>
+
+                  {/* Card 2: Wish */}
+                  <div className="snap-center shrink-0 w-[90vw] h-[75vh] max-h-[600px] bg-[#faf8f5] rounded-3xl p-5 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative">
+                     <div className="w-full border-b border-[var(--color-rust)]/20 pb-3 mb-4 flex justify-between items-end relative z-10">
+                         <div>
+                            <span className="font-sans-editorial text-[9px] uppercase tracking-[0.2em] font-bold text-[#a65d57]">Gửi tới</span>
+                            <h2 className="font-serif-editorial text-[1.4rem] font-bold text-[#1c1a19] leading-none mt-1">{girlData?.name}</h2>
+                         </div>
+                         <div className="font-mono text-[9px] text-[#1c1a19]/40 tracking-widest text-right">
+                            ID: {girlData?.stt}<br/>
+                            <span className="opacity-50 text-[7px] font-bold">VERIFIED CA</span>
+                         </div>
+                     </div>
+                     <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-base text-justify text-[#1c1a19]/80 pr-1 relative">
+                        <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] text-[15rem] leading-none pointer-events-none font-serif-editorial select-none">"</div>
+                        <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
+                              strong: ({node, ...props}) => <strong className="font-bold text-[#a65d57]" {...props} />,
+                              em: ({node, ...props}) => <em className="italic font-light" {...props} />,
+                            }}
+                        >
+                            {decodeHtmlEntities(girlData?.wish) || defaultWish}
+                        </ReactMarkdown>
+                        <div className="mt-6 text-right italic font-bold text-[#a65d57] text-lg pb-4">
+                            — {girlData?.signature || 'Thanh Xuân 12A4'}
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Card 3: QR Code */}
+                  <div className="snap-center shrink-0 w-[90vw] h-[75vh] max-h-[600px] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] rounded-3xl p-6 border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between text-white relative">
+                     <span className="font-sans-editorial text-[10px] tracking-widest text-[#a65d57] uppercase">Kỷ Niệm 12A4</span>
+                     <div className="flex flex-col items-center justify-center w-full flex-1">
+                         <div className="text-white/40 italic font-serif-editorial text-xl mb-6 text-center">Scan to Capture</div>
+                         <div className="bg-white p-3 rounded-3xl shadow-xl w-[65vw] max-w-[240px] aspect-square flex items-center justify-center">
+                             <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=400&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-[90%] h-[90%] object-contain" />
+                         </div>
+                         <span className="font-mono text-[11px] text-white/30 tracking-[0.3em] uppercase mt-8 text-center">
+                             #{hashCode}
+                         </span>
+                     </div>
+                  </div>
+                  
+              </div>
           </div>
-
-          {/* Card 2: Wish (Center Equivalent) */}
-          <div className="snap-center shrink-0 w-[85vw] max-w-[350px] h-[70vh] max-h-[550px] bg-[#faf8f5] rounded-3xl p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative">
-             <div className="w-full border-b border-[var(--color-rust)]/20 pb-4 mb-6 flex justify-between items-end relative z-10">
-                 <div>
-                    <span className="font-sans-editorial text-[9px] uppercase tracking-[0.2em] font-bold text-[#a65d57]">Gửi tới</span>
-                    <h2 className="font-serif-editorial text-[1.6rem] font-bold text-[#1c1a19] leading-none mt-1">{girlData?.name}</h2>
-                 </div>
-                 <div className="font-mono text-[9px] text-[#1c1a19]/40 tracking-widest text-right">
-                    ID: {girlData?.stt}<br/>
-                    <span className="opacity-50 text-[7px] font-bold">VERIFIED CA</span>
-                 </div>
-             </div>
-             
-             <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-base text-justify text-[#1c1a19]/80 pr-2 relative">
-                <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] text-[15rem] leading-none pointer-events-none font-serif-editorial select-none">"</div>
-                <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      p: ({node, ...props}) => <p className="mb-4 leading-relaxed" {...props} />,
-                      strong: ({node, ...props}) => <strong className="font-bold text-[#a65d57]" {...props} />,
-                      em: ({node, ...props}) => <em className="italic font-light" {...props} />,
-                    }}
-                >
-                    {decodeHtmlEntities(girlData?.wish) || defaultWish}
-                </ReactMarkdown>
-
-                <div className="mt-8 text-right italic font-bold text-[#a65d57] text-xl pb-4">
-                    — {girlData?.signature || 'Thanh Xuân 12A4'}
-                </div>
-             </div>
+          
+          {/* Pagination Indicators */}
+          <div className="absolute bottom-28 left-0 w-full flex justify-center items-center gap-3">
+              {[0, 1, 2].map((i) => (
+                  <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${activeMobileCard === i ? 'w-6 bg-[#faf8f5]' : 'w-1.5 bg-white/30'}`} />
+              ))}
           </div>
-
-          {/* Card 3: QR Code (Inside Left Equivalent) */}
-          <div className="snap-center shrink-0 w-[85vw] max-w-[350px] h-[70vh] max-h-[550px] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] rounded-3xl p-6 border border-white/5 shadow-2xl flex flex-col items-center justify-between text-white relative">
-             <span className="font-sans-editorial text-[10px] tracking-widest text-[#a65d57] uppercase">Kỷ Niệm 12A4</span>
-             <div className="flex flex-col items-center justify-center w-full flex-1">
-                 <div className="text-white/40 italic font-serif-editorial text-lg mb-6 text-center">Scan to Capture</div>
-                 <div className="bg-white p-4 rounded-3xl shadow-xl">
-                     <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-40 h-40 object-contain" />
-                 </div>
-                 <span className="font-mono text-[11px] text-white/30 tracking-[0.3em] uppercase mt-8 text-center">
-                     #{hashCode}
-                 </span>
-             </div>
-             <QrCode size={16} className="text-white/10" />
+          
+          <div className="absolute bottom-20 left-0 w-full flex justify-center gap-2 opacity-50 text-[9px] tracking-widest text-white uppercase items-center font-sans-editorial font-bold pointer-events-none">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              <span>Vuốt Hai Bên</span> 
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
-
       </div>
 
       {/* -------------- PC LAYOUT: GATEFOLD 3D CARD -------------- */}
       <div className="hidden md:flex card-perspective w-full h-full absolute inset-0 items-center justify-center [perspective:2500px] z-10 pointer-events-none">
           <div className="pointer-events-auto w-full h-full flex items-center justify-center">
-              <div className="card-container relative md:max-w-none md:w-[850px] lg:w-[1000px] md:h-[600px] lg:h-[700px] mx-auto z-10 origin-center transition-all">
+              <div className="card-container relative md:max-w-none md:w-[950px] lg:w-[1200px] md:h-[600px] lg:h-[750px] mx-auto z-10 origin-center transition-all">
                   
                   {/* MẶT TRONG THIỆP (Nội dung) */}
                   <div className="content-panel absolute inset-0 bg-[#faf8f5] rounded-3xl flex flex-col p-6 md:p-10 opacity-60 scale-95 border border-[#1c1a19]/10 [transform-style:preserve-3d]">
@@ -376,8 +395,8 @@ export default function ShareCard() {
                                <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-widest text-[#a65d57] uppercase">Hồi Ức 12A4</span>
                                <div className="flex flex-col items-center w-full">
                                    <div className="text-white/40 italic font-serif-editorial text-base md:text-xl mb-4 text-center">Scan to Capture</div>
-                                   <div className="bg-white p-3 md:p-4 rounded-3xl shadow-xl hover:scale-105 transition-transform duration-500">
-                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=300&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-32 h-32 lg:w-48 lg:h-48 object-contain" />
+                                   <div className="bg-white p-4 lg:p-6 rounded-3xl shadow-xl hover:scale-105 transition-transform duration-500">
+                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=500&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-40 h-40 lg:w-64 lg:h-64 object-contain" />
                                    </div>
                                    <span className="font-mono text-[9px] md:text-[11px] text-white/30 tracking-[0.3em] uppercase mt-6 text-center">
                                        #{hashCode}
@@ -440,8 +459,8 @@ export default function ShareCard() {
           </div>
       </div>
 
-      {/* Floating Action Bar (Always visible on mobile, appears when opened on PC) */}
-      <div className={`fixed bottom-6 md:bottom-10 left-0 w-full flex flex-row justify-center gap-3 md:gap-6 z-50 transition-all duration-1000 px-4 translate-y-0 opacity-100 pointer-events-auto ${!isOpen ? 'md:translate-y-12 md:opacity-0 md:pointer-events-none' : ''}`}>
+      {/* Floating Action Bar */}
+      <div className={`fixed bottom-6 md:bottom-10 left-0 w-full flex flex-row justify-center gap-3 md:gap-6 z-50 transition-all duration-700 ease-out px-4 ${activeMobileCard === 2 ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-12 opacity-0 pointer-events-none'} ${isOpen ? 'md:translate-y-0 md:opacity-100 md:pointer-events-auto' : 'md:translate-y-12 md:opacity-0 md:pointer-events-none'}`}>
          <button onClick={handleCopyLink} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-[#1c1a19]/90 backdrop-blur-xl text-white rounded-full px-5 py-4 font-sans-editorial uppercase tracking-widest text-[10px] md:text-[11px] font-bold shadow-[0_10px_30px_rgba(0,0,0,0.5)] hover:bg-[#34302e] transition-all border border-white/10 active:scale-95">
              {copied === 'link' ? <CheckCircle2 size={16} className="text-green-400" /> : <LinkIcon size={16} />}
              {copied === 'link' ? 'Đã sao chép' : 'Sao chép Link'}

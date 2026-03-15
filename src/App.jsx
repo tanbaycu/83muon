@@ -14,7 +14,7 @@ import ShareCard from './ShareCard';
 // --- COMPONENT: Circular Text SVG + Avatar ---
 const AvatarWithCircularText = ({ text, imgSrc }) => {
   return (
-    <div className="relative w-32 h-32 md:w-36 md:h-36 shrink-0 flex items-center justify-center">
+    <div className="relative w-32 h-32 md:w-48 md:h-48 lg:w-64 lg:h-64 shrink-0 flex items-center justify-center">
       <div className="absolute w-[60%] h-[60%] rounded-full overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.15)] bg-[var(--color-charcoal)]/5 z-10 border-[1.5px] border-[var(--color-oatmeal)]">
          {imgSrc ? (
            <img src={imgSrc} className="w-full h-full object-cover pointer-events-none" alt="Avatar" />

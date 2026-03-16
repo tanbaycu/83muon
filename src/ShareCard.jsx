@@ -7,8 +7,8 @@ import anime from 'animejs';
 import { Loader2, ArrowLeft, Link as LinkIcon, CheckCircle2, QrCode, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { defaultWish } from './members';
 
+const defaultWish = "Chúc bạn một ngày 8/3 thật ý nghĩa, xinh đẹp và luôn hạnh phúc!";
 // --- COMPONENT: Messy Path Drawing Loading ---
 const LoadingSVG = () => {
   const [svgContent, setSvgContent] = useState('');
@@ -227,7 +227,7 @@ export default function ShareCard() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full relative font-sans-editorial bg-[#1c1a19] flex items-center justify-center overflow-x-hidden p-4 md:p-10 py-20 pb-safe">
+    <div className="h-[100dvh] md:min-h-[100dvh] w-full relative font-sans-editorial bg-[#1c1a19] flex items-center justify-center overflow-hidden md:overflow-x-hidden p-0 md:p-10 pb-safe">
       
       {/* Background Animated iframe & Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-100">
@@ -249,10 +249,10 @@ export default function ShareCard() {
       </button>
 
       {/* -------------- MOBILE LAYOUT: 3 SWIPEABLE CARDS -------------- */}
-      <div className="md:hidden relative z-10 w-full h-[100dvh] flex flex-col pt-4 pb-32">
+      <div className="md:hidden relative z-10 w-full h-[100dvh] flex flex-col justify-end pb-[15vh]">
           
           <div 
-            className="flex-1 w-full flex flex-row items-center overflow-x-auto snap-x snap-mandatory hide-scrollbar px-[5vw] -translate-y-8"
+            className="w-full flex flex-row items-center overflow-x-auto snap-x snap-mandatory hide-scrollbar px-[5vw]"
             onScroll={(e) => {
                const scrollLeft = e.target.scrollLeft;
                const width = window.innerWidth * 0.9;
@@ -281,18 +281,18 @@ export default function ShareCard() {
                   </div>
 
                   {/* Card 2: Wish */}
-                  <div className="snap-center shrink-0 w-[90vw] h-[75vh] max-h-[600px] bg-[#faf8f5] rounded-3xl p-5 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative">
-                     <div className="w-full border-b border-[var(--color-rust)]/20 pb-3 mb-4 flex justify-between items-end relative z-10">
+                  <div className="snap-center shrink-0 w-[90vw] h-[75vh] max-h-[600px] bg-gradient-to-br from-[#1c1a19] to-[#2a2624] border border-white/5 rounded-3xl p-5 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col relative">
+                     <div className="w-full border-b border-white/10 pb-3 mb-4 flex justify-between items-end relative z-10">
                          <div>
                             <span className="font-sans-editorial text-[9px] uppercase tracking-[0.2em] font-bold text-[#a65d57]">Gửi tới</span>
-                            <h2 className="font-serif-editorial text-[1.4rem] font-bold text-[#1c1a19] leading-none mt-1">{girlData?.name}</h2>
+                            <h2 className="font-serif-editorial text-[1.4rem] font-bold text-white leading-none mt-1">{girlData?.name}</h2>
                          </div>
-                         <div className="font-mono text-[9px] text-[#1c1a19]/40 tracking-widest text-right">
+                         <div className="font-mono text-[9px] text-white/40 tracking-widest text-right">
                             ID: {girlData?.stt}<br/>
                             <span className="opacity-50 text-[7px] font-bold">VERIFIED CA</span>
                          </div>
                      </div>
-                     <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-base text-justify text-[#1c1a19]/80 pr-1 relative">
+                     <div className="flex-1 overflow-y-auto custom-scrollbar font-serif-editorial text-base text-justify text-white/80 pr-1 relative">
                         <div className="fixed top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] text-[15rem] leading-none pointer-events-none font-serif-editorial select-none">"</div>
                         <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
@@ -315,8 +315,8 @@ export default function ShareCard() {
                      <span className="font-sans-editorial text-[10px] tracking-widest text-[#a65d57] uppercase">Kỷ Niệm 12A4</span>
                      <div className="flex flex-col items-center justify-center w-full flex-1">
                          <div className="text-white/40 italic font-serif-editorial text-xl mb-6 text-center">Scan to Capture</div>
-                         <div className="bg-white p-3 rounded-3xl shadow-xl w-[65vw] max-w-[240px] aspect-square flex items-center justify-center">
-                             <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=400&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-[90%] h-[90%] object-contain" />
+                         <div className="group relative rounded-2xl shadow-xl hover:scale-105 transition-transform duration-500 mb-6 bg-transparent border-[0.5px] border-white/20 p-2">
+                             <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=400&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-[65vw] max-w-[240px] aspect-square object-contain rounded-xl mix-blend-screen opacity-90" />
                          </div>
                          <span className="font-mono text-[11px] text-white/30 tracking-[0.3em] uppercase mt-8 text-center">
                              #{hashCode}
@@ -395,8 +395,8 @@ export default function ShareCard() {
                                <span className="font-sans-editorial text-[8px] md:text-[10px] tracking-widest text-[#a65d57] uppercase">Hồi Ức 12A4</span>
                                <div className="flex flex-col items-center w-full">
                                    <div className="text-white/40 italic font-serif-editorial text-base md:text-xl mb-4 text-center">Scan to Capture</div>
-                                   <div className="bg-white p-4 lg:p-6 rounded-3xl shadow-xl hover:scale-105 transition-transform duration-500">
-                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=500&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-40 h-40 lg:w-64 lg:h-64 object-contain" />
+                                   <div className="group relative rounded-2xl shadow-xl hover:scale-105 transition-transform duration-500 bg-transparent border-[0.5px] border-white/20 p-2 md:p-3">
+                                       <img src={`https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=500&light=ffffff&dark=1c1a19&margin=1`} alt="QR Code" className="w-40 h-40 lg:w-64 lg:h-64 object-contain rounded-xl mix-blend-screen opacity-90" />
                                    </div>
                                    <span className="font-mono text-[9px] md:text-[11px] text-white/30 tracking-[0.3em] uppercase mt-6 text-center">
                                        #{hashCode}

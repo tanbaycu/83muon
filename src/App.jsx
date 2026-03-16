@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import anime from 'animejs';
 import { ArrowLeft, ChevronUp, QrCode } from 'lucide-react';
 import { Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import SystemRemits from './SystemRemits';
-import { defaultWish } from './members'; 
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+const defaultWish = "Chúc bạn một ngày 8/3 thật ý nghĩa, xinh đẹp và luôn hạnh phúc!";
 import ShareCard from './ShareCard';
 
 // --- COMPONENT: Circular Text SVG + Avatar ---
@@ -99,11 +100,50 @@ const LoadingSVG = () => {
   );
 };
 
+// --- COMPONENT: Điện ảnh - Cuộn phim 3D Cong ---
+const CinematicFilmStrip = ({ images, reverse, speed = 40, className="", style={}, innerTransform="" }) => {
+  if (!images || images.length === 0) return null;
+  const repImages = [...images, ...images, ...images, ...images]; 
+  return (
+    <div className={`absolute pointer-events-none ${className}`} style={{ zIndex: 10, ...style }}>
+      {/* 2.5D Wrapper */}
+      <div 
+        className="flex items-center p-2 md:p-3 bg-[#0a0a0a]/90 relative ring-1 ring-[#1a1a1a] min-w-max shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+        style={{ transform: innerTransform }}
+      >
+         {/* Lỗ hổng film (Holes) */}
+         <div className="absolute top-1 inset-x-0 h-1 md:h-1.5 opacity-80 z-20 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_10px,#fff_10px,#fff_14px)] mix-blend-overlay" />
+         <div className="absolute bottom-1 inset-x-0 h-1 md:h-1.5 opacity-80 z-20 bg-[repeating-linear-gradient(90deg,transparent_0,transparent_10px,#fff_10px,#fff_14px)] mix-blend-overlay" />
+         
+         <motion.div
+           animate={{ x: reverse ? ["-25%", "0%"] : ["0%", "-25%"] }} // dịch mũi -25% vì đã x4 array
+           transition={{ repeat: Infinity, duration: speed, ease: "linear" }}
+           className="flex gap-1.5 md:gap-2 px-1 relative z-10 w-max"
+         >
+           {/* Film Frames */}
+           {repImages.map((src, i) => (
+             <div key={i} className="w-[12vh] h-[9vh] md:w-[18vh] md:h-[13vh] shrink-0 bg-[#000] rounded-[2px] relative overflow-hidden ring-1 ring-white/10 group pointer-events-auto cursor-pointer">
+               <img 
+                  src={src} 
+                  className="w-full h-full object-cover opacity-90 sepia-[30%] contrast-[1.1] brightness-[0.85] group-hover:sepia-0 group-hover:opacity-100 transition-all duration-500 ease-out" 
+                  alt="Kỉ niệm" 
+                  loading="lazy" 
+               />
+               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors pointer-events-none" />
+             </div>
+           ))}
+         </motion.div>
+      </div>
+    </div>
+  )
+}
+
 // --- COMPONENT: CardViewer (Trang gốc) ---
 const CardViewer = () => {
   const [step, setStep] = useState(1);
-  const [stt, setStt] = useState('');
+  const [stt, setStt] = useState('124');
   const [selectedGirl, setSelectedGirl] = useState(null);
+  const [allGirlsImages, setAllGirlsImages] = useState([]);
   const [isInitiating, setIsInitiating] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false); 
   const inputRef = useRef(null);
@@ -153,9 +193,50 @@ const CardViewer = () => {
     try {
       const docRef = doc(db, 'girls', stt);
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      if (docSnap.exists() || stt === '124') {
+        if (stt === '124') {
+           getDocs(collection(db, 'girls')).then((snapshot) => {
+              const imgs = [];
+              snapshot.forEach((d) => {
+                 if (d.data().imageUrl && d.id !== '124') {
+                    imgs.push(d.data().imageUrl);
+                 }
+              });
+              // Shuffle
+              imgs.sort(() => 0.5 - Math.random());
+              setAllGirlsImages(imgs.length > 0 ? imgs : [
+                 "https://images.unsplash.com/photo-1517404215738-15263e9f9178?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop"
+              ]);
+           }).catch(err => {
+              console.error("Lỗi tải ảnh background, dùng mẫu dự phòng", err);
+              setAllGirlsImages([
+                 "https://images.unsplash.com/photo-1517404215738-15263e9f9178?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600&auto=format&fit=crop",
+                 "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600&auto=format&fit=crop"
+              ]);
+           });
+        }
+
         setTimeout(() => {
-          setSelectedGirl(docSnap.data());
+          let customData = null;
+          if (docSnap.exists()) {
+              customData = docSnap.data();
+          } else if (stt === '124') {
+              customData = {
+                  stt: '124',
+                  name: 'Cô Bạch Loan',
+                  wish: 'Một người lái đò thầm lặng, thanh xuân của chúng em rực rỡ một phần nhờ sự hiện diện của Cô. Kính chúc Cô luôn tươi trẻ, bình an và ngập tràn hạnh phúc.',
+                  signature: 'Tập thể 12A4',
+                  imageUrl: null 
+              };
+          }
+          setSelectedGirl(customData);
           setStep(2);
           setIsInitiating(false);
         }, 6000); // Intro Animation Delay
@@ -291,10 +372,20 @@ const CardViewer = () => {
             {/* 📱 MOBILE ADVANCED UX */}
             <div className="flex md:hidden w-full h-[100dvh] relative overflow-hidden bg-[#1c1a19] text-[#f4f2ee] touch-none">
                 
-                {/* 1. Full Screen Iframe Background */}
-                <div className="absolute inset-0 z-0">
-                   <iframe src="/animated.html" className="w-full h-full border-none pointer-events-auto" title="Flowers" />
-                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/30 to-black/95 pointer-events-none" />
+                {/* 1. Full Screen Iframe Background / Film Roll */}
+                <div className="absolute inset-0 z-0 bg-[#0a0a09] overflow-hidden">
+                   <iframe src="/animated.html" className="w-full h-full border-none pointer-events-auto opacity-70" title="Flowers" />
+                   
+                   {/* Cinematic Film Overlays in Mobile */}
+                   {selectedGirl?.stt === '124' && (
+                      <div className="absolute inset-0 z-[50] pointer-events-none flex flex-col items-center justify-center overflow-visible drop-shadow-2xl opacity-90">
+                         {/* Đi thẳng chéo */}
+                         <CinematicFilmStrip images={allGirlsImages} speed={45} className="-top-[10%] -left-[60vw]" innerTransform="rotate(25deg) scale(1.1)" />
+                         <CinematicFilmStrip images={allGirlsImages} reverse speed={55} className="bottom-[20%] -left-[80vw]" innerTransform="rotate(-35deg) scale(1)" />
+                      </div>
+                   )}
+
+                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/40 to-black/95 pointer-events-none relative z-20" />
                 </div>
 
                 {/* 2. Top Name Overlay */}
@@ -409,7 +500,7 @@ const CardViewer = () => {
             </div>
 
             {/* 💻 PC EDITORIAL MAGAZINE LAYOUT */}
-            <div className="hidden md:flex flex-row w-full h-[100dvh] relative z-10 bg-[var(--color-oatmeal)]">
+            <div className="hidden md:flex flex-row w-full h-[100dvh] relative z-10 bg-[var(--color-oatmeal)] overflow-hidden">
                
                <button 
                  onClick={() => setStep(1)}
@@ -418,9 +509,27 @@ const CardViewer = () => {
                  <ArrowLeft strokeWidth={1} size={36} />
                </button>
 
-               {/* Left Context Area (45%) */}
-               <div className="w-[45%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-20">
-                  <div className="flex flex-col items-start justify-center w-full relative">
+               {/* =========================================
+                   GLOBAL CINEMATIC FILM STRIPS (PC ONLY)
+                   Layers run across the entire screen behind content
+                   ========================================= */}
+               {selectedGirl?.stt === '124' && (
+                  <div className="absolute inset-0 z-0 pointer-events-none overflow-visible opacity-50 drop-shadow-2xl flex items-center justify-center pointer-events-none">
+                     {/* Phim ngang vắt chéo chìm (Top Left -> Bottom Right) */}
+                     <CinematicFilmStrip images={allGirlsImages} speed={60} className="absolute" innerTransform="rotate(35deg) scale(1.1) translateY(-25vh)" />
+                     
+                     {/* Phim ngang vắt chéo nổi (Top Right -> Bottom Left) */}
+                     <CinematicFilmStrip images={allGirlsImages} reverse speed={50} className="absolute" innerTransform="rotate(-20deg) scale(0.9) translateY(40vh)" />
+                     
+                     {/* Đường phim siêu dài xẻ ngang màn hình */}
+                     <CinematicFilmStrip images={allGirlsImages} speed={80} className="absolute" innerTransform="rotate(5deg) scale(1.3) translateY(0vh)" />
+                  </div>
+               )}
+
+                {/* Left Context Area (45%) */}
+               <div className="w-[45%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-20 pointer-events-none">
+
+                  <div className="flex flex-col items-start justify-center w-full relative z-10">
                     {/* AVATAR + CIRCULAR TEXT */}
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
@@ -451,12 +560,13 @@ const CardViewer = () => {
                </div>
 
                {/* Right Image Area (55%) iframe + Quote */}
-               <div className="w-[55%] h-full relative p-12 pr-12 xl:pr-24 bg-[var(--color-oatmeal)] flex items-center justify-center">
+               <div className="w-[55%] h-full relative p-12 pr-12 xl:pr-24 bg-transparent flex items-center justify-center pointer-events-none">
                   
-                  <div className="w-full h-full relative shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10 overflow-hidden bg-[#000]">
-                     <iframe src="/animated.html" className="absolute inset-0 w-full h-full border-none pointer-events-auto" title="Flowers" />
+                  {/* Khung Iframe Hoa */}
+                  <div className="w-full h-full relative shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10 overflow-hidden bg-[#000] pointer-events-auto">
+                     <iframe src="/animated.html" className="absolute inset-0 w-full h-full border-none pointer-events-auto opacity-[0.85]" title="Flowers" />
                      {/* Overlay gradient so text remains readable */}
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none z-20" />
                   </div>
                   
                   <motion.div 

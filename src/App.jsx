@@ -105,7 +105,7 @@ const CinematicFilmStrip = ({ images, reverse, speed = 40, className="", style={
   if (!images || images.length === 0) return null;
   const repImages = [...images, ...images, ...images, ...images]; 
   return (
-    <div className={`absolute pointer-events-none ${className}`} style={{ zIndex: 10, ...style }}>
+    <div className={`absolute pointer-events-none ${className}`} style={{ zIndex: 0, ...style }}>
       {/* 2.5D Wrapper */}
       <div 
         className="flex items-center p-2 md:p-3 bg-[#0a0a0a]/90 relative ring-1 ring-[#1a1a1a] min-w-max shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
@@ -141,7 +141,7 @@ const CinematicFilmStrip = ({ images, reverse, speed = 40, className="", style={
 // --- COMPONENT: CardViewer (Trang gốc) ---
 const CardViewer = () => {
   const [step, setStep] = useState(1);
-  const [stt, setStt] = useState('124');
+  const [stt, setStt] = useState('');
   const [selectedGirl, setSelectedGirl] = useState(null);
   const [allGirlsImages, setAllGirlsImages] = useState([]);
   const [isInitiating, setIsInitiating] = useState(false);
@@ -188,13 +188,19 @@ const CardViewer = () => {
 
   const handleOpenCard = async () => {
     if (!stt) return;
+    
+    let queryStt = stt.trim();
+    if (/^0+\d+$/.test(queryStt)) {
+        queryStt = parseInt(queryStt, 10).toString();
+    }
+    
     setIsInitiating(true);
     
     try {
-      const docRef = doc(db, 'girls', stt);
+      const docRef = doc(db, 'girls', queryStt);
       const docSnap = await getDoc(docRef);
-      if (docSnap.exists() || stt === '124') {
-        if (stt === '124') {
+      if (docSnap.exists() || queryStt === '124') {
+        if (queryStt === '124') {
            getDocs(collection(db, 'girls')).then((snapshot) => {
               const imgs = [];
               snapshot.forEach((d) => {
@@ -227,13 +233,13 @@ const CardViewer = () => {
           let customData = null;
           if (docSnap.exists()) {
               customData = docSnap.data();
-          } else if (stt === '124') {
+          } else if (queryStt === '124') {
               customData = {
                   stt: '124',
                   name: 'Cô Bạch Loan',
                   wish: 'Một người lái đò thầm lặng, thanh xuân của chúng em rực rỡ một phần nhờ sự hiện diện của Cô. Kính chúc Cô luôn tươi trẻ, bình an và ngập tràn hạnh phúc.',
                   signature: 'Tập thể 12A4',
-                  imageUrl: null 
+                  imageUrl: '/bachloan_avatar.jpg' 
               };
           }
           setSelectedGirl(customData);
@@ -378,14 +384,14 @@ const CardViewer = () => {
                    
                    {/* Cinematic Film Overlays in Mobile */}
                    {selectedGirl?.stt === '124' && (
-                      <div className="absolute inset-0 z-[50] pointer-events-none flex flex-col items-center justify-center overflow-visible drop-shadow-2xl opacity-90">
+                      <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden drop-shadow-2xl opacity-90">
                          {/* Đi thẳng chéo */}
-                         <CinematicFilmStrip images={allGirlsImages} speed={45} className="-top-[10%] -left-[60vw]" innerTransform="rotate(25deg) scale(1.1)" />
-                         <CinematicFilmStrip images={allGirlsImages} reverse speed={55} className="bottom-[20%] -left-[80vw]" innerTransform="rotate(-35deg) scale(1)" />
+                         <CinematicFilmStrip images={allGirlsImages} speed={45} className="top-[10%] -left-[50vw]" innerTransform="rotate(20deg) scale(1)" />
+                         <CinematicFilmStrip images={allGirlsImages} reverse speed={55} className="bottom-[15%] -left-[50vw]" innerTransform="rotate(-25deg) scale(0.9)" />
                       </div>
                    )}
 
-                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/40 to-black/95 pointer-events-none relative z-20" />
+                   <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/40 to-black/95 pointer-events-none z-10" />
                 </div>
 
                 {/* 2. Top Name Overlay */}
@@ -475,7 +481,7 @@ const CardViewer = () => {
                                   <ReactMarkdown 
                                     remarkPlugins={[remarkGfm]}
                                     components={{
-                                      p: ({node, ...props}) => <p className="text-[1.65rem] leading-[1.4] text-[var(--color-charcoal)] mb-4" {...props} />,
+                                      p: ({node, ...props}) => <p className="text-[1.45rem] leading-[1.6] text-[var(--color-charcoal)] mb-4" {...props} />,
                                       strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
                                       em: ({node, ...props}) => <em className="italic font-light" {...props} />,
                                       a: ({node, ...props}) => <a className="text-[var(--color-rust)] underline underline-offset-4 decoration-[1.5px] decoration-[var(--color-rust)]/50 hover:decoration-[var(--color-rust)] transition-all pointer-events-auto relative z-50" target="_blank" rel="noopener noreferrer" {...props} />
@@ -527,7 +533,7 @@ const CardViewer = () => {
                )}
 
                 {/* Left Context Area (45%) */}
-               <div className="w-[45%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-20 pointer-events-none">
+               <div className="w-[45%] h-full flex flex-col justify-center pl-16 lg:pl-24 relative z-10 pointer-events-none">
 
                   <div className="flex flex-col items-start justify-center w-full relative z-10">
                     {/* AVATAR + CIRCULAR TEXT */}
@@ -560,27 +566,27 @@ const CardViewer = () => {
                </div>
 
                {/* Right Image Area (55%) iframe + Quote */}
-               <div className="w-[55%] h-full relative p-12 pr-12 xl:pr-24 bg-transparent flex items-center justify-center pointer-events-none">
+               <div className="w-[55%] h-full relative z-20 p-12 pr-12 xl:pr-24 bg-transparent flex items-center justify-center pointer-events-none">
                   
                   {/* Khung Iframe Hoa */}
-                  <div className="w-full h-full relative shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10 overflow-hidden bg-[#000] pointer-events-auto">
-                     <iframe src="/animated.html" className="absolute inset-0 w-full h-full border-none pointer-events-auto opacity-[0.85]" title="Flowers" />
+                  <div className="w-full h-full relative shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-sm z-10 overflow-hidden bg-[#1a1918] pointer-events-auto">
+                     <iframe src="/animated.html" className="absolute inset-0 w-full h-full border-none pointer-events-auto opacity-100" title="Flowers" />
                      {/* Overlay gradient so text remains readable */}
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none z-20" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-20" />
                   </div>
                   
                   <motion.div 
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8, duration: 1 }}
-                    className="absolute -left-[10%] lg:-left-[25%] bottom-[8%] w-[95%] max-w-[850px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-10 lg:p-14 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30"
+                    className="absolute -left-[10%] lg:-left-[25%] bottom-[8%] w-[95%] max-w-[850px] bg-[var(--color-oatmeal)]/98 backdrop-blur-xl p-10 lg:p-14 shadow-[20px_20px_60px_rgba(0,0,0,0.25)] border border-[var(--color-charcoal)]/10 z-30 pointer-events-auto"
                   >
                      <span className="absolute -top-7 -left-3 text-7xl text-[var(--color-rust)] opacity-30 font-serif-editorial leading-none">"</span>
-                     <div className="font-serif-editorial relative z-10 text-justify w-full">
+                     <div className="font-serif-editorial relative z-10 text-justify w-full max-h-[45vh] overflow-y-auto pr-6 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[var(--color-charcoal)]/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-[var(--color-rust)]/40 transition-colors">
                         <ReactMarkdown 
                           remarkPlugins={[remarkGfm]}
                           components={{
-                            p: ({node, ...props}) => <p className="text-[1.8rem] lg:text-[2.2rem] leading-[1.4] text-[var(--color-charcoal)] mb-5" {...props} />,
+                            p: ({node, ...props}) => <p className="text-[1.55rem] lg:text-[1.9rem] leading-[1.5] text-[var(--color-charcoal)] mb-5" {...props} />,
                             strong: ({node, ...props}) => <strong className="font-bold text-[var(--color-rust)]" {...props} />,
                             em: ({node, ...props}) => <em className="italic font-light" {...props} />,
                             a: ({node, ...props}) => <a className="text-[var(--color-rust)] underline underline-offset-4 decoration-[1.5px] decoration-[var(--color-rust)]/50 hover:decoration-[var(--color-rust)] transition-all pointer-events-auto relative z-50" target="_blank" rel="noopener noreferrer" {...props} />

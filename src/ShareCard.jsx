@@ -77,7 +77,12 @@ export default function ShareCard() {
         return;
       }
       try {
-        const docRef = doc(db, 'girls', id);
+        let queryId = id;
+        if (/^\d+$/.test(queryId)) {
+            let num = parseInt(queryId, 10);
+            queryId = num !== 124 ? num.toString().padStart(2, '0') : num.toString();
+        }
+        const docRef = doc(db, 'girls', queryId);
         const docSnap = await getDoc(docRef);
         
         if (docSnap.exists()) {

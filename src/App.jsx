@@ -190,8 +190,9 @@ const CardViewer = () => {
     if (!stt) return;
     
     let queryStt = stt.trim();
-    if (/^0+\d+$/.test(queryStt)) {
-        queryStt = parseInt(queryStt, 10).toString();
+    if (/^\d+$/.test(queryStt)) {
+        let num = parseInt(queryStt, 10);
+        queryStt = num !== 124 ? num.toString().padStart(2, '0') : num.toString();
     }
     
     setIsInitiating(true);

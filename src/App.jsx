@@ -261,7 +261,7 @@ const CardViewer = () => {
     <div className="w-full h-full relative font-sans-editorial selection:bg-[var(--color-rust)] selection:text-white">
       
       <div className="fixed top-8 right-6 md:top-12 md:left-8 vertical-text text-[10px] md:text-sm font-bold tracking-[0.4em] uppercase text-[var(--color-charcoal)]/30 pointer-events-none z-[100] hidden md:block">
-        PROJECT VENUS // KÝ SỰ BÍ MẬT // TỪ NHỮNG QUÝ ÔNG
+        PROJECT VENUS // KÝ SỰ BÍ MẬT // TỪ NHỮNG đực rựa
       </div>
 
       <AnimatePresence mode="wait">
@@ -339,7 +339,7 @@ const CardViewer = () => {
                  transition={{ delay: 0.6, duration: 1 }}
                >
                  <div className="text-[1.2rem] md:text-[2rem] font-sans-editorial font-light text-[var(--color-charcoal)]/60 tracking-normal inline-block mt-6 md:mt-8">
-                   Vui lòng nhập số tương ứng để <br className="block md:hidden"/> mở trang kỷ yếu.
+                   Vui lòng nhập số thứ tự của các bạn để <br className="block md:hidden"/> mở.
                  </div>
                </motion.div>
 

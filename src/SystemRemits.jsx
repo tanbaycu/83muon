@@ -381,7 +381,7 @@ export default function SystemRemits() {
         <div className="flex flex-col gap-2 relative">
           <div className="flex items-center justify-between w-full">
             <div className="inline-block px-3 py-1 bg-[#a65d57]/10 text-[#a65d57] text-[10px] font-bold tracking-[0.2em] rounded-full w-max uppercase">
-              Workspace Admin
+              không gian làm việc
             </div>
             <button 
               onClick={() => signOut(auth)}
@@ -402,13 +402,13 @@ export default function SystemRemits() {
                onClick={() => setViewMode('editor')} 
                className={`flex-1 sm:flex-none uppercase px-6 py-3 sm:py-2 text-[10px] sm:text-xs font-bold tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all ${viewMode === 'editor' ? 'bg-white shadow-sm text-[#1c1a19]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
             >
-               <Edit3 size={16} /> Trình soạn thảo
+               <Edit3 size={16} /> Trình
             </button>
             <button 
                onClick={() => setViewMode('dashboard')} 
                className={`flex-1 sm:flex-none uppercase px-6 py-3 sm:py-2 text-[10px] sm:text-xs font-bold tracking-wider rounded-lg flex items-center justify-center gap-2 transition-all ${viewMode === 'dashboard' ? 'bg-white shadow-sm text-[#a65d57]' : 'text-[#1c1a19]/50 hover:text-[#1c1a19]'}`}
             >
-               <LayoutDashboard size={16} /> Quản lý Dữ liệu
+               <LayoutDashboard size={16} /> Quản lý
             </button>
         </div>
 
@@ -417,7 +417,7 @@ export default function SystemRemits() {
         {viewMode === 'dashboard' ? (
            <div className="flex flex-col gap-6 w-full animate-fadeIn">
               <div className="flex justify-between items-center px-1">
-                <h2 className="text-2xl font-bold font-serif-editorial">Danh sách đã nộp ({dashboardData.length})</h2>
+                <h2 className="text-2xl font-bold font-serif-editorial">Danh sách ({dashboardData.length})</h2>
                 <button onClick={loadDashboard} className="text-[10px] font-bold uppercase tracking-widest text-[#a65d57] hover:underline p-2 flex items-center gap-1"><RotateCw size={12}/> Làm mới</button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -454,7 +454,7 @@ export default function SystemRemits() {
                                     </button>
                                 ) : (
                                     <div className="flex items-center gap-1.5 px-3 py-2.5 bg-[#1c1a19]/10 text-[#1c1a19]/50 text-[10px] uppercase tracking-widest font-bold rounded-lg cursor-not-allowed">
-                                        <Lock size={14} /> Hệ thống khóa
+                                        <Lock size={14} /> Locked
                                     </div>
                                 )}
                             </div>
@@ -497,7 +497,7 @@ export default function SystemRemits() {
                         onClick={handleClearForm}
                         className="w-full sm:w-auto bg-white text-[#a65d57] px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 border border-[#a65d57]/30 hover:bg-[#a65d57]/5 shadow-sm"
                       >
-                        <FilePlus size={16} /> Clear / Thêm mới
+                        <FilePlus size={16} /> Clear / Add new
                       </button>
                     )}
                     <button 
@@ -506,7 +506,7 @@ export default function SystemRemits() {
                       className="w-full sm:w-auto bg-[#1c1a19] text-white px-8 py-3 rounded-xl text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shrink-0 active:scale-[0.98] disabled:opacity-50 hover:bg-[#34302e] shadow-md border border-[#1c1a19]/20"
                     >
                       {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                      <span className="mt-0.5">Kiểm tra STT</span>
+                      <span className="mt-0.5">Check STT</span>
                     </button>
                   </div>
                 </div>

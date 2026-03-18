@@ -379,7 +379,7 @@ export default function ShareCard() {
                          </ReactMarkdown>
 
                          <div className="mt-8 text-right italic font-bold text-[#a65d57] text-xl md:text-2xl pb-4">
-                             — {girlData?.signature || 'Nh?ng Ngu?i Ch�n Th�nh'}
+                             — {girlData?.signature || 'Thanh Xuân 12A4'}
                          </div>
                       </div>
 

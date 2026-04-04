@@ -4,7 +4,7 @@
 
 Each person gets a unique card accessed by their ID: a cinematic full-screen experience with their name, photo, custom message, and share link.
 
-**Live demo:** [your-app.vercel.app](https://your-app.vercel.app)
+**Live demo:** [ladyserendipity.vercel.app](https://ladyserendipity.vercel.app)
 
 ---
 
@@ -45,8 +45,8 @@ Each person gets a unique card accessed by their ID: a cinematic full-screen exp
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/your-username/your-repo.git
-cd your-repo
+git clone https://github.com/tanbaycu/petal.git
+cd petal
 npm install
 ```
 
@@ -113,9 +113,11 @@ Open [http://localhost:5173](http://localhost:5173)
 1. Push your repo to GitHub
 2. Import the project at [vercel.com/new](https://vercel.com/new)
 3. In **Environment Variables**, add all `VITE_FIREBASE_*` keys from your `.env`
-4. Deploy — done!
+4. Click **Deploy**
 
 > ⚠️ **Important:** Never commit `.env`. The `.gitignore` already excludes it. Use `.env.example` as the template.
+
+**Framework preset:** Vite — Vercel detects this automatically. Build command is `vite build`, output directory is `dist`.
 
 ---
 
@@ -157,7 +159,7 @@ Cards are stored in the `girls` collection. The **document ID** is the card's un
 }
 ```
 
-> **Storage strategy:** Images are compressed to < 50KB via `browser-image-compression` then stored as base64 strings directly in Firestore — bypassing Firebase Storage entirely.
+> **Storage strategy:** Images are compressed to < 50KB via `browser-image-compression` then stored as base64 strings directly in Firestore — bypassing Firebase Storage entirely. This keeps the architecture serverless and free-tier friendly.
 
 ---
 
@@ -189,10 +191,93 @@ This project is designed as a reusable template. Adapt it for graduation, birthd
 | Default fallback message | `src/App.jsx` → `defaultWish` constant |
 | Color palette | `src/App.css` → CSS variables (`--color-*`) |
 | Page title & meta tags | `index.html` |
-| Collection name in Firestore | Search `'girls'` in `src/App.jsx` and `src/SystemRemits.jsx` |
+| Firestore collection name | Search `'girls'` in `src/App.jsx` and `src/SystemRemits.jsx` |
 
 ---
 
-## 📄 License
+## 🤝 Contributing & Expanding
 
-MIT — Free to use, fork, and adapt for personal and educational projects.
+Want to extend this project? Here's how to get started:
+
+### Fork & Branch Workflow
+
+```bash
+# Fork the repo on GitHub, then clone your fork
+git clone https://github.com/YOUR_USERNAME/REPO_NAME.git
+cd REPO_NAME
+
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes, then commit
+git add .
+git commit -m "feat: describe what you added"
+
+# Push to your fork
+git push origin feature/your-feature-name
+
+# Open a Pull Request on GitHub
+```
+
+### Commit Message Convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for clarity:
+
+| Prefix | Use case |
+|--------|----------|
+| `feat:` | New feature |
+| `fix:` | Bug fix |
+| `style:` | UI/CSS only changes |
+| `refactor:` | Code restructure, no behavior change |
+| `docs:` | README or comment updates |
+| `chore:` | Build config, dependencies |
+
+### Ideas for Extensions
+
+Here are some directions you can take this project further:
+
+- **Multi-language support** — add i18n for English/Vietnamese switching
+- **Card categories** — group cards by event type (birthday, graduation, holiday)
+- **Email delivery** — send the card link via EmailJS or Resend when saved
+- **QR code generator** — auto-generate a QR for each card's share URL
+- **Analytics dashboard** — track how many times each card was viewed
+- **Dark mode** — toggle between light editorial and dark cinematic themes
+- **Video avatar support** — allow short video clips instead of static photos
+- **Reaction system** — let viewers leave emoji reactions on cards
+
+### Local Development Tips
+
+```bash
+# Run dev server with hot reload
+npm run dev
+
+# Lint check before committing
+npm run lint
+
+# Build and preview production bundle locally
+npm run build
+npm run preview
+```
+
+> 💡 **Firebase emulators:** For local Firestore/Auth without touching production data, install the [Firebase CLI](https://firebase.google.com/docs/cli) and run `firebase emulators:start`.
+
+---
+
+## 📖 Câu chuyện dự án *(Vietnamese)*
+
+> *Dự án này được tạo ra vào đúng ngày **8 tháng 3 năm 2025** — Ngày Quốc tế Phụ nữ.*
+
+Ý tưởng bắt nguồn từ một điều rất đơn giản: muốn tặng thiệp chúc mừng 8/3 cho từng người trong lớp, nhưng theo một cách **không tầm thường**. Thay vì những tấm thiệp in sẵn hay tin nhắn chúc mừng hàng loạt, mỗi người sẽ nhận được một trang riêng của chính mình — với tên, ảnh và lời chúc được viết tay, trình bày theo phong cách tạp chí nghệ thuật.
+
+Toàn bộ dự án được xây dựng trong **một đêm**, từ thiết kế đến deploy. Giao diện lấy cảm hứng từ phong cách editorial của các tạp chí thời trang cao cấp — phông chữ serif italic, hiệu ứng cuộn phim điện ảnh, bố cục bất đối xứng — nhằm tôn vinh vẻ đẹp của từng người một cách xứng đáng nhất.
+
+Nếu bạn đang đọc README này và muốn dùng dự án cho dịp đặc biệt của mình, hãy cứ fork thoải mái. Code được viết để dễ tùy chỉnh. Chỉ cần thay nội dung, chỉnh màu sắc, và kết nối Firebase của bạn — là xong.
+
+*Tặng tất cả những người phụ nữ xứng đáng được nhớ đến. 🌸*
+
+---
+
+
+## Author
+
+[tanbaycu](https://tanbaycu.is-a.dev) — make it with ❤️ on March 8th
